@@ -19,8 +19,8 @@ class HttpReceiver(
         ) : State
     }
 
-    private val _state = MutableStateFlow<State>(State.Stopped(starting = false))
-    val state = _state.asStateFlow()
+    private val _states = MutableStateFlow<State>(State.Stopped(starting = false))
+    val states = _states.asStateFlow()
     private var serverSocket: ServerSocket? = null
 
     private fun getLocalAddress(): Pair<NetworkInterface, InetAddress> {
@@ -38,9 +38,9 @@ class HttpReceiver(
         serverSocket: ServerSocket,
     ) {
         while (true) {
-            val currentState = _state.value
-            if (currentState !is State.Started) break
-            if (currentState.stopping) break
+            val state = _states.value
+            if (state !is State.Started) break
+            if (state.stopping) break
             try {
                 serverSocket.accept().use { socket ->
                     val request = HttpRequest.read(socket.getInputStream())
@@ -48,7 +48,7 @@ class HttpReceiver(
                     response.write(socket.getOutputStream())
                 }
             } catch (e: SocketException) {
-                if (_state.value == currentState.copy(stopping = true)) break
+                if (_states.value == state.copy(stopping = true)) break
                 val isReachable = serverSocket.inetAddress.isReachable(ni, 0, 1_000)
                 if (!isReachable) break
                 TODO("socket accept error: $e")
@@ -58,20 +58,19 @@ class HttpReceiver(
         }
     }
 
-    fun start() {
-        val oldState = _state.value
-        if (oldState !is State.Stopped) TODO()
-        if (oldState.starting) TODO()
-        _state.value = State.Stopped(starting = true)
+    fun start(port: Int? = null) {
+        val state = _states.value
+        if (state !is State.Stopped) TODO()
+        if (state.starting) TODO()
+        _states.value = State.Stopped(starting = true)
         runCatching {
             getLocalAddress()
         }.mapCatching { (ni, address) ->
-            val port = 40631
-            ni to ServerSocket(port, 1, address)
+            ni to ServerSocket(port ?: 0, 1, address)
         }.onSuccess { (ni, serverSocket) ->
             if (this.serverSocket != null) TODO()
             this.serverSocket = serverSocket
-            _state.value = State.Started(
+            _states.value = State.Started(
                 stopping = false,
                 host = serverSocket.inetAddress.hostAddress!!,
                 port = serverSocket.localPort,
@@ -79,15 +78,15 @@ class HttpReceiver(
             onStarting(ni = ni, serverSocket = serverSocket)
             this.serverSocket = null
         }
-        _state.value = State.Stopped(starting = false)
+        _states.value = State.Stopped(starting = false)
     }
 
     fun stop() {
-        val oldState = _state.value
-        if (oldState !is State.Started) TODO()
-        if (oldState.stopping) TODO()
+        val state = _states.value
+        if (state !is State.Started) TODO()
+        if (state.stopping) TODO()
         val serverSocket = serverSocket ?: TODO()
-        _state.value = oldState.copy(stopping = true)
+        _states.value = state.copy(stopping = true)
         runCatching { serverSocket.close() }
     }
 }

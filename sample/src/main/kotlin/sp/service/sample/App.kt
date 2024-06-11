@@ -16,12 +16,12 @@ private class AppRouting(
     private val coroutineScope: CoroutineScope,
     private val version: String,
 ) : HttpRouting {
-    sealed interface Broadcast {
-        data object Quit : Broadcast
+    sealed interface Event {
+        data object Quit : Event
     }
 
-    private val _broadcast = MutableSharedFlow<Broadcast>()
-    val broadcast = _broadcast.asSharedFlow()
+    private val _events = MutableSharedFlow<Event>()
+    val events = _events.asSharedFlow()
 
     private val mapping = mapOf(
         "/version" to mapOf(
@@ -44,7 +44,7 @@ private class AppRouting(
 
     private fun onGetQuit(request: HttpRequest): HttpResponse {
         coroutineScope.launch {
-            _broadcast.emit(Broadcast.Quit)
+            _events.emit(Event.Quit)
         }
         return HttpResponse(
             version = "1.1",
@@ -85,14 +85,14 @@ fun main() {
             )
             val receiver = HttpReceiver(routing)
             launch {
-                routing.broadcast.collect { broadcast ->
-                    when (broadcast) {
-                        AppRouting.Broadcast.Quit -> receiver.stop()
+                routing.events.collect { event ->
+                    when (event) {
+                        AppRouting.Event.Quit -> receiver.stop()
                     }
                 }
             }
             launch {
-                receiver.state.collect { state ->
+                receiver.states.collect { state ->
                     println("state: $state")
                     when (state) {
                         is HttpReceiver.State.Started -> {
@@ -109,7 +109,7 @@ fun main() {
                     }
                 }
             }
-            receiver.start()
+            receiver.start(port = 40631)
         }.join()
     }
 }
