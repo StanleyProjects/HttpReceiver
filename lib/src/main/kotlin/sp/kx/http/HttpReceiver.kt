@@ -7,7 +7,9 @@ import java.net.NetworkInterface
 import java.net.ServerSocket
 import java.net.SocketException
 
-class HttpReceiver {
+class HttpReceiver(
+    private val routing: HttpRouting,
+) {
     sealed interface State {
         data class Stopped(val starting: Boolean) : State
         data class Started(
@@ -41,7 +43,9 @@ class HttpReceiver {
             if (currentState.stopping) break
             try {
                 serverSocket.accept().use { socket ->
-                    // todo
+                    val request = HttpRequest.read(socket.getInputStream())
+                    val response = routing.route(request)
+                    response.write(socket.getOutputStream())
                 }
             } catch (e: SocketException) {
                 if (_state.value == currentState.copy(stopping = true)) break

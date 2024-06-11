@@ -3,20 +3,94 @@ package sp.service.sample
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import sp.kx.http.HttpReceiver
-import java.util.concurrent.atomic.AtomicBoolean
+import sp.kx.http.HttpRequest
+import sp.kx.http.HttpResponse
+import sp.kx.http.HttpRouting
+
+private class AppRouting(
+    private val coroutineScope: CoroutineScope,
+    private val version: String,
+) : HttpRouting {
+    sealed interface Broadcast {
+        data object Quit : Broadcast
+    }
+
+    private val _broadcast = MutableSharedFlow<Broadcast>()
+    val broadcast = _broadcast.asSharedFlow()
+
+    private val mapping = mapOf(
+        "/version" to mapOf(
+            "GET" to ::onGetVersion,
+        ),
+        "/quit" to mapOf(
+            "GET" to ::onGetQuit,
+        ),
+    )
+
+    private fun onGetVersion(request: HttpRequest): HttpResponse {
+        return HttpResponse(
+            version = "1.1",
+            code = 200,
+            message = "OK",
+            headers = emptyMap(),
+            body = version.toByteArray(),
+        )
+    }
+
+    private fun onGetQuit(request: HttpRequest): HttpResponse {
+        coroutineScope.launch {
+            _broadcast.emit(Broadcast.Quit)
+        }
+        return HttpResponse(
+            version = "1.1",
+            code = 200,
+            message = "OK",
+            headers = emptyMap(),
+            body = null,
+        )
+    }
+
+    override fun route(request: HttpRequest): HttpResponse {
+        val route = mapping[request.query] ?: return HttpResponse(
+            version = "1.1",
+            code = 404,
+            message = "Not Found",
+            headers = emptyMap(),
+            body = null,
+        )
+        val transform = route[request.method] ?: return HttpResponse(
+            version = "1.1",
+            code = 405,
+            message = "Method Not Allowed",
+            headers = emptyMap(),
+            body = null,
+        )
+        return transform(request)
+    }
+}
 
 fun main() {
     runBlocking {
         val job = Job()
         val coroutineScope = CoroutineScope(Dispatchers.Default + job)
-        val stopped = AtomicBoolean(true)
         coroutineScope.launch {
-            val receiver = HttpReceiver()
+            val routing = AppRouting(
+                coroutineScope = this,
+                version = "0.0.1",
+            )
+            val receiver = HttpReceiver(routing)
+            launch {
+                routing.broadcast.collect { broadcast ->
+                    when (broadcast) {
+                        AppRouting.Broadcast.Quit -> receiver.stop()
+                    }
+                }
+            }
             launch {
                 receiver.state.collect { state ->
                     println("state: $state")
@@ -24,11 +98,10 @@ fun main() {
                         is HttpReceiver.State.Started -> {
                             if (!state.stopping) {
                                 println("started: ${state.host}:${state.port}")
-                                stopped.set(false)
                             }
                         }
                         is HttpReceiver.State.Stopped -> {
-                            if (!state.starting && stopped.compareAndSet(false, true)) {
+                            if (!state.starting) {
                                 println("stopped")
                                 job.cancel()
                             }
@@ -36,13 +109,7 @@ fun main() {
                     }
                 }
             }
-            launch(Dispatchers.Default) {
-                receiver.start()
-            }
-            withContext(Dispatchers.Default) {
-                delay(5_000)
-            }
-            receiver.stop()
+            receiver.start()
         }.join()
     }
 }
