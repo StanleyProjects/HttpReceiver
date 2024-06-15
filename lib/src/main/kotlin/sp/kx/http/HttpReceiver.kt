@@ -42,9 +42,13 @@ class HttpReceiver(
             if (state !is State.Started) break
             if (state.stopping) break
             try {
+                println("socket accepting...") // todo
                 serverSocket.accept().use { socket ->
+                    println("socket(${socket.hashCode()}) accepted") // todo
                     val request = HttpRequest.read(socket.getInputStream())
+                    println("socket(${socket.hashCode()}): request(${request.hashCode()}) read") // todo
                     val response = routing.route(request)
+                    println("socket(${socket.hashCode()}): response(${response.hashCode()}) routed") // todo
                     response.write(socket.getOutputStream())
                 }
             } catch (e: SocketException) {
