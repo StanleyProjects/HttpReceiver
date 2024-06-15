@@ -69,11 +69,29 @@ class HttpRequest(
 
         private fun InputStream.toByteArray(): ByteArray {
             val buffer = ByteArrayOutputStream()
-            while (available() > 0) {
+            while (true) {
                 val bytes = ByteArray(1024)
                 val length = read(bytes)
-                println("read bytes($length): available: ${available()}") // todo
-                if (length < 0) break
+                println("read $length bytes") // todo
+                if (length <= 0) break
+                buffer.write(bytes, 0, length)
+                val available = available()
+                println("available: $available")
+                if (available <= 0) break
+            }
+            return buffer.toByteArray()
+        }
+
+        private fun InputStream.toByteArrayV1(): ByteArray {
+            val buffer = ByteArrayOutputStream()
+            while (true) {
+                val available = available()
+                println("available: $available")
+                if (available <= 0) break
+                val bytes = ByteArray(kotlin.math.min(1024, available))
+                val length = read(bytes)
+                println("read $length bytes") // todo
+                if (length <= 0) break
                 buffer.write(bytes, 0, length)
             }
             return buffer.toByteArray()
@@ -81,9 +99,12 @@ class HttpRequest(
 
         internal fun read(inputStream: InputStream): HttpRequest {
             val bytes = inputStream.toByteArray()
+            println("read bytes: ${bytes.size}") // todo
             val separator = "\r\n".toByteArray()
             var index = 0
             val firstLine = bytes.readLine(index = index, separator = separator)
+            check(firstLine.isNotEmpty()) { "First header is empty!" }
+            check(firstLine.isNotBlank()) { "First header is blank!" }
             index += firstLine.length + separator.size
             val split = firstLine.split(" ")
             check(split.size == 3) { "Wrong first header!" }
