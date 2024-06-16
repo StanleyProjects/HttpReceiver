@@ -11,11 +11,7 @@ class HttpResponse(
 ) {
     internal fun write(outputStream: OutputStream) {
         val builder = StringBuilder()
-            .append("HTTP/$version")
-            .append(" ")
-            .append(code.toString())
-            .append(" ")
-            .append(message)
+            .append("HTTP/$version $code $message")
             .append("\r\n")
         headers.forEach { (key, value) ->
             builder.append("$key: $value")

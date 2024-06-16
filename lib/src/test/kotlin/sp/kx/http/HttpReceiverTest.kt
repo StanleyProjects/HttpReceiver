@@ -1,18 +1,13 @@
 package sp.kx.http
 
-import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 internal class HttpReceiverTest {
     @Test
     fun createTest() {
-        val routing = object : HttpRouting {
-            override fun route(request: HttpRequest): HttpResponse {
-                error("Impossible!")
-            }
-        }
-        val receiver = HttpReceiver(routing)
+        val receiver = HttpReceiver(MockRouting())
         val expected = HttpReceiver.State.Stopped(starting = false)
-        Assertions.assertEquals(expected, receiver.states.value)
+        assertEquals(expected, receiver.states.value)
     }
 }
