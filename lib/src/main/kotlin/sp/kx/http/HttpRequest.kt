@@ -1,7 +1,25 @@
 package sp.kx.http
 
+import java.io.ByteArrayOutputStream
 import java.io.InputStream
 
+/**
+ * A class to represent a message sent by the client to initiate an action on the server.
+ *
+ * @property version The HTTP version, which defines the structure of the remaining message,
+ * acting as an indicator of the expected version to use for the response.
+ * @property method An [HTTP method](https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods),
+ * a verb (like [GET](https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/GET), PUT or POST)
+ * or a noun (like HEAD or OPTIONS), that describes the action to be performed.
+ * @property query The request target, usually a [URL](https://developer.mozilla.org/en-US/docs/Glossary/URL),
+ * or the absolute path of the protocol, port, and domain are usually characterized by the request context.
+ * @property headers let the client and the server pass additional information with an HTTP request or response.
+ * @property body Not all requests have one:
+ *  - requests fetching resources like GET or HEAD usually don't need a body
+ *  - requests that send data to the server to create a resource, such as PUT or POST requests, typically require a body with the data used to fulfill the request
+ * @author [Stanley Wintergreen](https://github.com/kepocnhh)
+ * @since 0.0.2
+ */
 class HttpRequest(
     val version: String,
     val method: String,
@@ -10,14 +28,45 @@ class HttpRequest(
     val body: ByteArray?,
 ) {
     companion object {
+        private fun ByteArray.readUntil(index: Int, expected: ByteArray): String {
+            if (expected.isEmpty()) TODO("Expected bytes is empty!")
+            for (x in index until size) {
+                if (get(x) != expected[0]) continue
+                val toIndexExclusive = x + expected.size
+                if (toIndexExclusive > size) break
+                val slice = copyOfRange(x, toIndex = toIndexExclusive)
+                if (!expected.contentEquals(slice)) TODO("Slice is not a separator!")
+                return String(copyOfRange(index, x))
+            }
+            return String(copyOfRange(index, size))
+        }
+
+        private fun InputStream.toByteArray(): ByteArray {
+            val buffer = ByteArrayOutputStream()
+            while (true) {
+                val bytes = ByteArray(1024)
+                val length = read(bytes)
+                if (length == 0) TODO("Stream returns 0 on read!")
+                if (length < 0) break
+                buffer.write(bytes, 0, length)
+                val available = available()
+                if (available == 0) break
+            }
+            return buffer.toByteArray()
+        }
+
         internal fun read(inputStream: InputStream): HttpRequest {
-            val reader = inputStream.bufferedReader()
-            val firstHeader = reader.readLine()
-            check(!firstHeader.isNullOrBlank())
-            val split = firstHeader.split(" ")
-            check(split.size == 3)
+            val bytes = inputStream.toByteArray()
+            val separator = "\r\n".toByteArray()
+            var index = 0
+            val firstLine = bytes.readUntil(index = index, expected = separator)
+            check(firstLine.isNotEmpty()) { "First header is empty!" }
+            check(firstLine.isNotBlank()) { "First header is blank!" }
+            index += firstLine.length + separator.size
+            val split = firstLine.split(" ")
+            check(split.size == 3) { "Wrong first header!" }
             val protocol = split[2].split("/")
-            check(protocol.size == 2)
+            check(protocol.size == 2) { "Wrong protocol!" }
             check(protocol[0] == "HTTP")
             val version = protocol[1]
             check(version == "1.1") // todo 505 HTTP Version Not Supported
@@ -25,22 +74,22 @@ class HttpRequest(
             val query = split[1]
             val headers = mutableMapOf<String, String>()
             while (true) {
-                val line = reader.readLine()
-                if (line.isNullOrEmpty()) break
-                val index = line.indexOf(':')
-                if (index < 1) continue
-                if (index > line.length - 3) continue
-                val key = line.substring(0, index)
-                val value = line.substring(index + 2, line.length)
+                val line = bytes.readUntil(index = index, expected = separator)
+                if (line.isEmpty()) break
+                index += line.length + separator.size
+                val colonIndex = line.indexOf(':')
+                if (colonIndex < 1) continue
+                if (colonIndex > line.length - 3) continue
+                val key = line.substring(0, colonIndex)
+                val value = line.substring(colonIndex + 2, line.length)
                 headers[key] = value
             }
+            index += separator.size
             val body = headers["Content-Length"]
                 ?.toIntOrNull()
                 ?.takeIf { it > 0 }
                 ?.let { size ->
-                    ByteArray(size) {
-                        reader.read().toByte()
-                    }
+                    bytes.copyOfRange(index, index + size)
                 }
             return HttpRequest(
                 version = version,

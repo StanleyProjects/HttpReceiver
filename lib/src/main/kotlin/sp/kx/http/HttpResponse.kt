@@ -2,6 +2,16 @@ package sp.kx.http
 
 import java.io.OutputStream
 
+/**
+ * A class to represent a message sent by the server in response to a message from the client.
+ *
+ * @property code A status [code](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status),
+ * indicating success or failure of the request.
+ * @property message A status text. A brief, purely informational,
+ * textual description of the status code to help a human understand the HTTP message.
+ * @author [Stanley Wintergreen](https://github.com/kepocnhh)
+ * @since 0.0.2
+ */
 class HttpResponse(
     val version: String,
     val code: Int,
@@ -11,11 +21,7 @@ class HttpResponse(
 ) {
     internal fun write(outputStream: OutputStream) {
         val builder = StringBuilder()
-            .append("HTTP/$version")
-            .append(" ")
-            .append(code.toString())
-            .append(" ")
-            .append(message)
+            .append("HTTP/$version $code $message")
             .append("\r\n")
         headers.forEach { (key, value) ->
             builder.append("$key: $value")
