@@ -3,6 +3,23 @@ package sp.kx.http
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 
+/**
+ * A class to represent a message sent by the client to initiate an action on the server.
+ *
+ * @property version The HTTP version, which defines the structure of the remaining message,
+ * acting as an indicator of the expected version to use for the response.
+ * @property method An [HTTP method](https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods),
+ * a verb (like [GET](https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/GET), PUT or POST)
+ * or a noun (like HEAD or OPTIONS), that describes the action to be performed.
+ * @property query The request target, usually a [URL](https://developer.mozilla.org/en-US/docs/Glossary/URL),
+ * or the absolute path of the protocol, port, and domain are usually characterized by the request context.
+ * @property headers let the client and the server pass additional information with an HTTP request or response.
+ * @property body Not all requests have one:
+ *  - requests fetching resources like GET or HEAD usually don't need a body
+ *  - requests that send data to the server to create a resource, such as PUT or POST requests, typically require a body with the data used to fulfill the request
+ * @author [Stanley Wintergreen](https://github.com/kepocnhh)
+ * @since 0.0.2
+ */
 class HttpRequest(
     val version: String,
     val method: String,
