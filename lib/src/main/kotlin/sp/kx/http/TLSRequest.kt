@@ -1,5 +1,6 @@
 package sp.kx.http
 
+import sp.kx.bytes.toHEX
 import java.util.UUID
 import javax.crypto.SecretKey
 
@@ -10,9 +11,9 @@ internal class TLSRequest(
 ) {
     override fun toString(): String {
         return "{" +
-            "secretKey.size: ${secretKey.encoded.size}, " +
+            "secretKey: ${secretKey.encoded.toHEX()}, " +
             "id: $id, " +
-            "encoded.size: ${encoded.size}, " +
+            "encoded: ${encoded.toHEX()}, " +
             "}"
     }
 }

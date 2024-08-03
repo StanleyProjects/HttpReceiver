@@ -1,5 +1,6 @@
 package sp.kx.http
 
+import sp.kx.bytes.toHEX
 import java.io.OutputStream
 import java.util.Objects
 
@@ -45,7 +46,7 @@ class HttpResponse(
             "code: $code, " +
             "message: $message, " +
             "headers: $headers, " +
-            "body.size: ${body?.size ?: 0}" +
+            "body: ${body?.toHEX()}" +
             "}"
     }
 

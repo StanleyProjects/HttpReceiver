@@ -60,7 +60,7 @@ tasks.getByName<KotlinCompile>("compileTestKotlin") {
 
 dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
-    implementation("com.github.kepocnhh:Bytes:0.0.1u-SNAPSHOT")
+    implementation("com.github.kepocnhh:Bytes:0.1.0-SNAPSHOT")
     testImplementation("org.junit.jupiter:junit-jupiter-api:${Version.jupiter}")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${Version.jupiter}")
 }
