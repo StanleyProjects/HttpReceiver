@@ -1,6 +1,7 @@
 package sp.kx.http
 
 import java.io.OutputStream
+import java.util.Objects
 
 /**
  * A class to represent a message sent by the server in response to a message from the client.
@@ -36,5 +37,51 @@ class HttpResponse(
             outputStream.write(body)
         }
         outputStream.flush()
+    }
+
+    override fun toString(): String {
+        return "{" +
+            "version: $version, " +
+            "code: $code, " +
+            "message: $message, " +
+            "headers: $headers, " +
+            "body.size: ${body?.size ?: 0}" +
+            "}"
+    }
+
+    override fun equals(other: Any?): Boolean {
+        return when (other) {
+            is HttpResponse -> {
+                val equals = body == null && other.body == null || body != null && other.body != null && body.contentEquals(other.body)
+                if (!equals) return false
+                return other.version == version && other.code == code && other.message == message && other.headers == headers
+            }
+            else -> false
+        }
+    }
+
+    override fun hashCode(): Int {
+        return Objects.hash(
+            version,
+            code,
+            message,
+            headers.entries.sumOf { (k, v) -> Objects.hash(k, v) },
+            body?.contentHashCode() ?: 0,
+        )
+    }
+
+    companion object {
+        fun InternalServerError(
+            headers: Map<String, String> = emptyMap(),
+            body: ByteArray? = null,
+        ): HttpResponse {
+            return HttpResponse(
+                version = "1.1",
+                code = 500,
+                message = "Internal Server Error",
+                headers = headers,
+                body = body,
+            )
+        }
     }
 }

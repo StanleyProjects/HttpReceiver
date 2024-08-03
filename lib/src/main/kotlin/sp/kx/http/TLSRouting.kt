@@ -108,12 +108,8 @@ abstract class TLSRouting : HttpRouting {
         transform: (REQ) -> RES,
         encode: (RES) -> ByteArray,
     ): HttpResponse {
-        val body = request.body ?: return HttpResponse(
-            version = "1.1",
-            code = 500,
-            message = "Internal Server Error",
-            headers = mapOf("message" to "No body!"),
-            body = "todo".toByteArray(),
+        val body = request.body ?: return HttpResponse.InternalServerError(
+            headers = mapOf("description" to "No body!"),
         )
         val keyPair = getKeyPair()
         val tlsRequest = try {
