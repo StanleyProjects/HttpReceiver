@@ -71,6 +71,19 @@ class HttpResponse(
     }
 
     companion object {
+        fun OK(
+            headers: Map<String, String> = emptyMap(),
+            body: ByteArray? = null,
+        ): HttpResponse {
+            return HttpResponse(
+                version = "1.1",
+                code = 200,
+                message = "OK",
+                headers = headers,
+                body = body,
+            )
+        }
+
         fun InternalServerError(
             headers: Map<String, String> = emptyMap(),
             body: ByteArray? = null,

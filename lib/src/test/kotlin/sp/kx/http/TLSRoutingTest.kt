@@ -5,6 +5,24 @@ import org.junit.jupiter.api.Test
 
 internal class TLSRoutingTest {
     @Test
+    fun toRequestTest() {
+        val keyPair = mockKeyPair()
+        val routing = MockTLSRouting(
+            keyPairProvider = { keyPair },
+        )
+        val methodCode: Byte = 42
+        val encodedQuery = "foobar".toByteArray()
+        val expected = mockTLSRequest()
+        val actual = routing.toRequest(
+            keyPair = keyPair,
+            body = "foo".toByteArray(),
+            methodCode = methodCode,
+            encodedQuery = encodedQuery,
+        )
+        assertEquals(expected, actual)
+    }
+
+    @Test
     fun mapTest() {
         val keyPair = mockKeyPair()
         val routing = MockTLSRouting(
