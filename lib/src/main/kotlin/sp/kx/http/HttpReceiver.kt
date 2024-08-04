@@ -83,8 +83,13 @@ class HttpReceiver(
 
     fun stop() {
         val state = _states.value
-        if (state !is State.Started) TODO()
-        if (state.stopping) TODO()
+        when (state) {
+            is State.Started -> if (state.stopping) return
+            is State.Stopped -> {
+                if (state.starting) TODO()
+                return
+            }
+        }
         val serverSocket = serverSocket ?: TODO()
         _states.value = state.copy(stopping = true)
         runCatching { serverSocket.close() }
