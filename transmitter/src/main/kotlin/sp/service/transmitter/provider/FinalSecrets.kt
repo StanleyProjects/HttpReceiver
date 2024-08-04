@@ -35,4 +35,17 @@ internal class FinalSecrets : Secrets {
         sig.update(encoded)
         return sig.sign()
     }
+
+    override fun verify(key: PublicKey, encoded: ByteArray, signature: ByteArray): Boolean {
+        val sig = Signature.getInstance("SHA256withRSA")
+        sig.initVerify(key)
+        sig.update(encoded)
+        return sig.verify(signature)
+    }
+
+    override fun decrypt(key: SecretKey, encrypted: ByteArray): ByteArray {
+        val cipher = Cipher.getInstance("AES")
+        cipher.init(Cipher.DECRYPT_MODE, key)
+        return cipher.doFinal(encrypted)
+    }
 }

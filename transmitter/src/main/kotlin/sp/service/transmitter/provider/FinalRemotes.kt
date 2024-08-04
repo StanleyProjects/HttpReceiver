@@ -3,14 +3,19 @@ package sp.service.transmitter.provider
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import sp.kx.bytes.readInt
+import sp.kx.bytes.readLong
 import sp.kx.bytes.toHEX
 import sp.kx.bytes.write
 import java.net.URL
 import java.security.KeyPair
+import java.security.PublicKey
 import java.util.Date
 import java.util.UUID
 import java.util.concurrent.TimeUnit
+import javax.crypto.SecretKey
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.minutes
 
 internal class FinalRemotes(
     loggers: Loggers,
@@ -22,6 +27,44 @@ internal class FinalRemotes(
     private val client = OkHttpClient.Builder()
         .callTimeout(5, TimeUnit.SECONDS)
         .build()
+
+    private fun onResponse(
+        secretKey: SecretKey,
+        publicKey: PublicKey,
+        responseBody: ByteArray,
+        encodedQuery: ByteArray,
+        methodCode: Byte,
+        requestID: UUID,
+    ): ByteArray {
+        val encryptedPayload = ByteArray(responseBody.readInt())
+        System.arraycopy(responseBody, 4, encryptedPayload, 0, encryptedPayload.size)
+        logger.debug("response encrypted payload: ${encryptedPayload.toHEX()}") // todo
+        val payload = secrets.decrypt(secretKey, encryptedPayload)
+        logger.debug("response payload: ${payload.toHEX()}") // todo
+        val responseEncoded = ByteArray(payload.readInt())
+        System.arraycopy(payload, 4, responseEncoded, 0, responseEncoded.size)
+        logger.debug("response encoded: ${responseEncoded.toHEX()}") // todo
+        val responseTime = payload.readLong(index = 4 + responseEncoded.size).milliseconds
+        logger.debug("response time: ${Date(responseTime.inWholeMilliseconds)}") // todo
+        val signature = ByteArray(responseBody.readInt(index = 4 + encryptedPayload.size))
+        System.arraycopy(responseBody, 4 + encryptedPayload.size + 4, signature, 0, signature.size)
+        logger.debug("response:signature: ${signature.toHEX()}") // todo
+        logger.debug("response:signature:hash: ${secrets.hash(signature).toHEX()}") // todo
+        val signatureData = ByteArray(payload.size + 16 + 1 + encodedQuery.size)
+        System.arraycopy(payload, 0, signatureData, 0, payload.size)
+        signatureData.write(index = payload.size, requestID)
+        signatureData[payload.size + 16] = methodCode
+        System.arraycopy(encodedQuery, 0, signatureData, payload.size + 16 + 1, encodedQuery.size)
+        logger.debug("response:signature:data: ${signatureData.toHEX()}") // todo
+        logger.debug("response:signature:data:hash: ${secrets.hash(signatureData).toHEX()}") // todo
+        val verified = secrets.verify(publicKey, signatureData, signature)
+        if (!verified) TODO("FinalRemotes:onDouble:!verified")
+        val now = System.currentTimeMillis().milliseconds
+        // todo now < requestTime
+        val maxTime = 1.minutes
+        if (now - responseTime > maxTime) TODO("FinalRemotes:onDouble:time")
+        return responseEncoded
+    }
 
     override fun double(number: Int): Int {
         val requestTime = System.currentTimeMillis().milliseconds
@@ -72,7 +115,16 @@ internal class FinalRemotes(
         ).execute().use { response ->
             when (response.code) {
                 200 -> {
-                    TODO("FinalRemotes:double($number)")
+                    val responseBody = response.body?.bytes() ?: error("No body!")
+                    val responseEncoded = onResponse(
+                        secretKey = secretKey,
+                        publicKey = keyPair.public,
+                        responseBody = responseBody,
+                        encodedQuery = encodedQuery,
+                        methodCode = methodCode,
+                        requestID = requestID,
+                    )
+                    responseEncoded.readInt()
                 }
                 else -> error("Unknown code: ${response.code}!")
             }

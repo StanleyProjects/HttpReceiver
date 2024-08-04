@@ -60,16 +60,16 @@ abstract class TLSRouting : HttpRouting {
     ): TLSRequest {
         val encryptedSK = ByteArray(body.readInt())
         System.arraycopy(body, 4, encryptedSK, 0, encryptedSK.size)
-        println("encrypted secret key: ${encryptedSK.toHEX()}") // todo
+//        println("encrypted secret key: ${encryptedSK.toHEX()}") // todo
         val encrypted = ByteArray(body.readInt(index = 4 + encryptedSK.size))
         System.arraycopy(body, 4 + encryptedSK.size + 4, encrypted, 0, encrypted.size)
-        println("encrypted payload: ${encrypted.toHEX()}") // todo
+//        println("encrypted payload: ${encrypted.toHEX()}") // todo
         val signature = ByteArray(body.readInt(index = 4 + encryptedSK.size + 4 + encrypted.size))
         System.arraycopy(body, 4 + encryptedSK.size + 4 + encrypted.size + 4, signature, 0, signature.size)
-        println("signature: ${signature.toHEX()}") // todo
+//        println("signature: ${signature.toHEX()}") // todo
         val secretKey = toSecretKey(decrypt(keyPair.private, encryptedSK))
         val payload = decrypt(secretKey, encrypted)
-        println("payload: ${payload.toHEX()}") // todo
+//        println("payload: ${payload.toHEX()}") // todo
         val signatureData = ByteArray(payload.size + 1 + encodedQuery.size + secretKey.encoded.size)
         System.arraycopy(payload, 0, signatureData, 0, payload.size)
         signatureData[payload.size] = methodCode
@@ -91,7 +91,7 @@ abstract class TLSRouting : HttpRouting {
             this.requested = requested.filterValues { now - it > maxTime}
         }
         this.requested += id to time
-        System.arraycopy(payload, 0, encoded, 0, encoded.size)
+        System.arraycopy(payload, 4, encoded, 0, encoded.size)
         return TLSRequest(
             secretKey = secretKey,
             id = id,
@@ -116,18 +116,20 @@ abstract class TLSRouting : HttpRouting {
                 methodCode = methodCode,
                 encodedQuery = encodedQuery,
             )
+            val decoded = decode(tlsRequest.encoded)
+//            println("decoded: $decoded") // todo
             toResponseBody(
                 secretKey = tlsRequest.secretKey,
                 privateKey = keyPair.private,
                 methodCode = methodCode,
                 encodedQuery = encodedQuery,
                 requestID = tlsRequest.id,
-                encoded = encode(transform(decode(tlsRequest.encoded))),
+                encoded = encode(transform(decoded)),
             )
         }.map { body ->
             HttpResponse.OK(body = body)
         }.getOrElse { error ->
-            println("error: $error") // todo
+//            println("error: $error") // todo
             HttpResponse.InternalServerError(body = "todo".toByteArray())
         }
     }
