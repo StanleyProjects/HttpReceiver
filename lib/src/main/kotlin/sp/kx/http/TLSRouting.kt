@@ -94,7 +94,7 @@ abstract class TLSRouting(
     ): HttpResponse {
         return runCatching {
             val body = request.body ?: error("No body!")
-            val methodCode = getMethodCode(request = request)
+            val methodCode = TLSEnvironment.getMethodCode(method = request.method)
             val encodedQuery = request.query.toByteArray()
             val tlsReceiver = toReceiver(
                 methodCode = methodCode,
@@ -116,15 +116,6 @@ abstract class TLSRouting(
         }.getOrElse { error ->
 //            println("error: $error") // todo
             HttpResponse.InternalServerError(body = "todo".toByteArray())
-        }
-    }
-
-    companion object {
-        private fun getMethodCode(request: HttpRequest): Byte {
-            return when (request.method) {
-                "POST" -> 1
-                else -> error("Method \"${request.method}\" is not supported!")
-            }
         }
     }
 }

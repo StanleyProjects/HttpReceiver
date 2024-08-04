@@ -18,4 +18,13 @@ interface TLSEnvironment {
     fun decrypt(key: PrivateKey, encrypted: ByteArray): ByteArray
     fun decrypt(key: SecretKey, encrypted: ByteArray): ByteArray
     fun verify(key: PublicKey, encoded: ByteArray, signature: ByteArray): Boolean
+
+    companion object {
+        fun getMethodCode(method: String): Byte {
+            return when (method) {
+                "POST" -> 1
+                else -> error("Method \"${method}\" is not supported!")
+            }
+        }
+    }
 }

@@ -22,15 +22,18 @@ internal class FinalRemotes(
         .callTimeout(5, TimeUnit.SECONDS)
         .build()
 
-    override fun double(number: Int): Int {
-        val query = "/double"
+    private fun <REQ : Any, RES : Any> map(
+        method: String,
+        query: String,
+        decoded: REQ,
+        encode: (REQ) -> ByteArray,
+        decode: (ByteArray) -> RES,
+    ): RES {
+        logger.debug("method: \"$method\"") // todo
+        val methodCode: Byte = TLSEnvironment.getMethodCode(method = method)
         logger.debug("query: \"$query\"") // todo
         val encodedQuery = query.toByteArray()
-        val method = "POST"
-        val methodCode: Byte = 1 // POST
-        logger.debug("method: \"$method\"") // todo
-        val requestEncoded = ByteArray(4)
-        requestEncoded.write(value = number)
+        val requestEncoded = encode(decoded)
         val tlsTransmitter = TLSTransmitter.build(
             env = tlsEnv,
             keyPair = keyPair,
@@ -55,10 +58,24 @@ internal class FinalRemotes(
                         body = response.body?.bytes() ?: error("No body!"),
                         requestID = tlsTransmitter.id,
                     )
-                    responseEncoded.readInt()
+                    decode(responseEncoded)
                 }
                 else -> error("Unknown code: ${response.code}!")
             }
         }
+    }
+
+    override fun double(number: Int): Int {
+        return map(
+            method = "POST",
+            query = "/double",
+            decoded = number,
+            encode = {
+                val bytes = ByteArray(4)
+                bytes.write(value = it)
+                bytes
+            },
+            decode = { it.readInt() }
+        )
     }
 }
