@@ -5,24 +5,43 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import sp.kx.bytes.toHEX
 import sp.kx.http.HttpReceiver
 import sp.service.sample.provider.FinalLoggers
 import sp.service.sample.provider.FinalSecrets
 import sp.service.sample.provider.Loggers
 import sp.service.sample.provider.Secrets
+import java.security.KeyPair
+import java.security.KeyStore
+import java.security.PrivateKey
 
 fun main() {
     val loggers: Loggers = FinalLoggers()
     val logger = loggers.create("[App]")
     val secrets: Secrets = FinalSecrets()
+    val keyStore = KeyStore.getInstance("PKCS12")
+    val alias = "a202"
+    val password = "qwe202"
+    Thread.currentThread().contextClassLoader.getResourceAsStream("a202.pkcs12").use {
+        if (it == null) error("No stream!")
+        logger.debug("load key store...")
+        keyStore.load(it, password.toCharArray())
+    }
+    val key = keyStore.getKey(alias, password.toCharArray()) ?: error("No \"$alias\"!")
+    check(key is PrivateKey)
+    logger.debug("private:key:hash: ${secrets.hash(key.encoded).toHEX()}")
+    val certificate = keyStore.getCertificate(alias)
+    logger.debug("public:key:hash: ${secrets.hash(certificate.publicKey.encoded).toHEX()}")
+    val keyPair = KeyPair(certificate.publicKey, key)
     runBlocking {
         val job = Job()
         val coroutineScope = CoroutineScope(Dispatchers.Default + job)
         coroutineScope.launch {
             val routing = AppRouting(
-                version = 2,
                 loggers = loggers,
                 secrets = secrets,
+                keyPair = keyPair,
+                requested = mutableMapOf(),
             )
             val receiver = HttpReceiver(routing)
             launch {

@@ -3,18 +3,28 @@ package sp.service.sample
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.runBlocking
+import sp.kx.bytes.readInt
+import sp.kx.bytes.write
 import sp.kx.http.HttpRequest
 import sp.kx.http.HttpResponse
-import sp.kx.http.HttpRouting
+import sp.kx.http.TLSRouting
 import sp.service.sample.provider.Loggers
 import sp.service.sample.provider.Secrets
+import java.security.KeyPair
+import java.security.PrivateKey
+import java.security.PublicKey
+import java.util.UUID
 import javax.crypto.SecretKey
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.minutes
 
 internal class AppRouting(
-    private val version: Int,
     loggers: Loggers,
     private val secrets: Secrets,
-) : HttpRouting {
+    private val keyPair: KeyPair,
+    override var requested: Map<UUID, Duration>,
+) : TLSRouting() {
     sealed interface Event {
         data object Quit : Event
     }
@@ -24,120 +34,71 @@ internal class AppRouting(
     val events = _events.asSharedFlow()
 
     private val mapping = mapOf(
-        "/version" to mapOf(
-            "GET" to ::onGetVersion,
+        "/double" to mapOf(
+            "POST" to ::onPostDouble,
         ),
         "/quit" to mapOf(
             "GET" to ::onGetQuit,
         ),
-        "/session/start" to mapOf(
-            "POST" to ::onPostSessionStart,
-        ),
-        "/double" to mapOf(
-            "POST" to ::onPostDouble,
-        ),
     )
-
-    private var secretKey: SecretKey? = null
-
-    private fun onPostDouble(request: HttpRequest): HttpResponse {
-        logger.debug("on post double...")
-        val body = request.body ?: return HttpResponse(
-            version = "1.1",
-            code = 500,
-            message = "Internal Server Error",
-            headers = mapOf(
-                "message" to "No body!",
-            ),
-            body = "todo".toByteArray(),
-        )
-        logger.debug("encrypted:request: ${secrets.hash(body)}")
-        val secretKey = secretKey ?: return HttpResponse(
-            version = "1.1",
-            code = 500,
-            message = "Internal Server Error",
-            headers = mapOf(
-                "message" to "No secret key!",
-            ),
-            body = "todo".toByteArray(),
-        )
-        val decryptedRequest = secrets.decrypt(secretKey = secretKey, body)
-        logger.debug("decrypted:request: ${secrets.hash(decryptedRequest)}")
-        val number = try {
-            String(decryptedRequest).toInt().also { check(it in 1..128) }
-        } catch (e: Throwable) {
-            return HttpResponse(
-                version = "1.1",
-                code = 500,
-                message = "Internal Server Error",
-                headers = mapOf(
-                    "message" to "Wrong number!",
-                ),
-                body = "todo".toByteArray(),
-            )
-        }
-        val decryptedResponse = "${number * 2}".toByteArray()
-        logger.debug("decrypted:response: ${secrets.hash(decryptedResponse)}")
-        val encryptedResponse = secrets.encrypt(secretKey = secretKey, decryptedResponse)
-        logger.debug("encrypted:response: ${secrets.hash(encryptedResponse)}")
-        this.secretKey = null
-        return HttpResponse(
-            version = "1.1",
-            code = 200,
-            message = "OK",
-            headers = emptyMap(),
-            body = encryptedResponse,
-        )
-    }
-
-    private fun onPostSessionStart(request: HttpRequest): HttpResponse {
-        logger.debug("on post session start...")
-        val body = request.body ?: return HttpResponse(
-            version = "1.1",
-            code = 500,
-            message = "Internal Server Error",
-            headers = mapOf(
-                "message" to "No body!",
-            ),
-            body = "todo".toByteArray(),
-        )
-        val publicKey = secrets.toPublicKey(body)
-        logger.debug("public:key: ${secrets.hash(publicKey.encoded)}")
-        val secretKey = secrets.newSecretKey()
-        logger.debug("secret:key: ${secrets.hash(secretKey.encoded)}")
-        val encrypted = secrets.encrypt(publicKey, secretKey.encoded)
-        logger.debug("secret:key:encrypted: ${secrets.hash(encrypted)}")
-        this.secretKey = secretKey
-        return HttpResponse(
-            version = "1.1",
-            code = 200,
-            message = "OK",
-            headers = emptyMap(),
-            body = encrypted,
-        )
-    }
-
-    private fun onGetVersion(request: HttpRequest): HttpResponse {
-        return HttpResponse(
-            version = "1.1",
-            code = 200,
-            message = "OK",
-            headers = emptyMap(),
-            body = "$version".toByteArray(),
-        )
-    }
 
     private fun onGetQuit(request: HttpRequest): HttpResponse {
         runBlocking {
             _events.emit(Event.Quit)
         }
-        return HttpResponse(
-            version = "1.1",
-            code = 200,
-            message = "OK",
-            headers = emptyMap(),
-            body = null,
+        return HttpResponse.OK()
+    }
+
+    private fun onPostDouble(request: HttpRequest): HttpResponse {
+        return map(
+            request = request,
+            decode = { it.readInt() },
+            transform = {
+                check(it in 1..1024)
+                it * 2
+            },
+            encode = {
+                val bytes = ByteArray(4)
+                bytes.write(value = it)
+                bytes
+            },
         )
+    }
+
+    override fun getKeyPair(): KeyPair {
+        return keyPair
+    }
+
+    override fun toSecretKey(encoded: ByteArray): SecretKey {
+        TODO("AppRouting:toSecretKey")
+    }
+
+    override fun decrypt(key: PrivateKey, encrypted: ByteArray): ByteArray {
+        return secrets.decrypt(key, encrypted)
+    }
+
+    override fun decrypt(key: SecretKey, encrypted: ByteArray): ByteArray {
+        return secrets.decrypt(key, encrypted)
+    }
+
+    override fun encrypt(key: SecretKey, encrypted: ByteArray): ByteArray {
+        return secrets.encrypt(key, encrypted)
+    }
+
+    override fun verify(key: PublicKey, encoded: ByteArray, signature: ByteArray): Boolean {
+        return secrets.verify(key, encoded, signature)
+    }
+
+    override fun sign(key: PrivateKey, encoded: ByteArray): ByteArray {
+        return secrets.sign(key, encoded)
+    }
+
+    override fun getMaxTime(): Duration {
+        return 1.minutes
+    }
+
+    override fun now(): Duration {
+        return System.currentTimeMillis().milliseconds
     }
 
     override fun route(request: HttpRequest): HttpResponse {
@@ -148,23 +109,11 @@ internal class AppRouting(
                 headers: ${request.headers}
             """.trimIndent(),
         )
-        val response = when (val route = mapping[request.query]) {
-            null -> HttpResponse(
-                version = "1.1",
-                code = 404,
-                message = "Not Found",
-                headers = emptyMap(),
-                body = null,
-            )
-            else -> when (val transform = route[request.method]) {
-                null -> HttpResponse(
-                    version = "1.1",
-                    code = 405,
-                    message = "Method Not Allowed",
-                    headers = emptyMap(),
-                    body = null,
-                )
-                else -> transform(request)
+        val response = when (val routes = mapping[request.query]) {
+            null -> HttpResponse.NotFound()
+            else -> when (val route = routes[request.method]) {
+                null -> HttpResponse.MethodNotAllowed()
+                else -> route(request)
             }
         }
         logger.debug(

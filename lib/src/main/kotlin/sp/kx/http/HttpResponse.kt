@@ -85,6 +85,32 @@ class HttpResponse(
             )
         }
 
+        fun NotFound(
+            headers: Map<String, String> = emptyMap(),
+            body: ByteArray? = null,
+        ): HttpResponse {
+            return HttpResponse(
+                version = "1.1",
+                code = 404,
+                message = "Not Found",
+                headers = headers,
+                body = body,
+            )
+        }
+
+        fun MethodNotAllowed(
+            headers: Map<String, String> = emptyMap(),
+            body: ByteArray? = null,
+        ): HttpResponse {
+            return HttpResponse(
+                version = "1.1",
+                code = 405,
+                message = "Method Not Allowed",
+                headers = headers,
+                body = body,
+            )
+        }
+
         fun InternalServerError(
             headers: Map<String, String> = emptyMap(),
             body: ByteArray? = null,
