@@ -46,6 +46,7 @@ fun main() {
             val receiver = HttpReceiver(routing)
             launch {
                 routing.events.collect { event ->
+                    logger.debug("event: $event")
                     when (event) {
                         AppRouting.Event.Quit -> receiver.stop()
                     }
