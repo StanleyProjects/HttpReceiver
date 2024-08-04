@@ -9,11 +9,13 @@ import sp.kx.bytes.toHEX
 import sp.kx.http.HttpReceiver
 import sp.service.sample.provider.FinalLoggers
 import sp.service.sample.provider.FinalSecrets
+import sp.service.sample.provider.FinalTLSEnvironment
 import sp.service.sample.provider.Loggers
 import sp.service.sample.provider.Secrets
 import java.security.KeyPair
 import java.security.KeyStore
 import java.security.PrivateKey
+import kotlin.time.Duration.Companion.minutes
 
 fun main() {
     val loggers: Loggers = FinalLoggers()
@@ -39,7 +41,7 @@ fun main() {
         coroutineScope.launch {
             val routing = AppRouting(
                 loggers = loggers,
-                secrets = secrets,
+                tlsEnv = FinalTLSEnvironment(maxTime = 1.minutes),
                 keyPair = keyPair,
                 requested = mutableMapOf(),
                 coroutineScope = coroutineScope,

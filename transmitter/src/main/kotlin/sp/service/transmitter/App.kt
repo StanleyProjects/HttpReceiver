@@ -4,6 +4,7 @@ import sp.kx.bytes.toHEX
 import sp.service.transmitter.provider.FinalLoggers
 import sp.service.transmitter.provider.FinalRemotes
 import sp.service.transmitter.provider.FinalSecrets
+import sp.service.transmitter.provider.FinalTLSEnvironment
 import sp.service.transmitter.provider.Loggers
 import sp.service.transmitter.provider.Remotes
 import sp.service.transmitter.provider.Secrets
@@ -11,6 +12,7 @@ import java.net.URL
 import java.security.KeyPair
 import java.security.KeyStore
 import java.security.PrivateKey
+import kotlin.time.Duration.Companion.minutes
 
 fun main() {
     val loggers: Loggers = FinalLoggers()
@@ -32,7 +34,10 @@ fun main() {
     val keyPair = KeyPair(certificate.publicKey, key)
     val remotes: Remotes = FinalRemotes(
         loggers = loggers,
-        secrets = secrets,
+        tlsEnv = FinalTLSEnvironment(
+            secrets = secrets,
+            maxTime = 1.minutes,
+        ),
         keyPair = keyPair,
         address = URL("http://192.168.88.222:40631"),
     )

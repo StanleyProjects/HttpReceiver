@@ -1,36 +1,27 @@
 package sp.service.sample
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import sp.kx.bytes.readInt
 import sp.kx.bytes.write
 import sp.kx.http.HttpRequest
 import sp.kx.http.HttpResponse
+import sp.kx.http.TLSEnvironment
 import sp.kx.http.TLSRouting
 import sp.service.sample.provider.Loggers
-import sp.service.sample.provider.Secrets
 import java.security.KeyPair
-import java.security.PrivateKey
-import java.security.PublicKey
 import java.util.UUID
-import javax.crypto.SecretKey
-import javax.crypto.spec.SecretKeySpec
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.minutes
 
 internal class AppRouting(
     loggers: Loggers,
-    private val secrets: Secrets,
-    private val keyPair: KeyPair,
+    tlsEnv: TLSEnvironment,
+    override val keyPair: KeyPair,
     override var requested: Map<UUID, Duration>,
     private val coroutineScope: CoroutineScope,
-) : TLSRouting() {
+) : TLSRouting(tlsEnv) {
     sealed interface Event {
         data object Quit : Event
     }
@@ -69,42 +60,6 @@ internal class AppRouting(
                 bytes
             },
         )
-    }
-
-    override fun getKeyPair(): KeyPair {
-        return keyPair
-    }
-
-    override fun toSecretKey(encoded: ByteArray): SecretKey {
-        return SecretKeySpec(encoded, "AES")
-    }
-
-    override fun decrypt(key: PrivateKey, encrypted: ByteArray): ByteArray {
-        return secrets.decrypt(key, encrypted)
-    }
-
-    override fun decrypt(key: SecretKey, encrypted: ByteArray): ByteArray {
-        return secrets.decrypt(key, encrypted)
-    }
-
-    override fun encrypt(key: SecretKey, encrypted: ByteArray): ByteArray {
-        return secrets.encrypt(key, encrypted)
-    }
-
-    override fun verify(key: PublicKey, encoded: ByteArray, signature: ByteArray): Boolean {
-        return secrets.verify(key, encoded, signature)
-    }
-
-    override fun sign(key: PrivateKey, encoded: ByteArray): ByteArray {
-        return secrets.sign(key, encoded)
-    }
-
-    override fun getMaxTime(): Duration {
-        return 1.minutes
-    }
-
-    override fun now(): Duration {
-        return System.currentTimeMillis().milliseconds
     }
 
     override fun route(request: HttpRequest): HttpResponse {
