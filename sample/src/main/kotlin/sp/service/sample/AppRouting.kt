@@ -15,6 +15,7 @@ import java.security.PrivateKey
 import java.security.PublicKey
 import java.util.UUID
 import javax.crypto.SecretKey
+import javax.crypto.spec.SecretKeySpec
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
@@ -54,7 +55,7 @@ internal class AppRouting(
             request = request,
             decode = { it.readInt() },
             transform = {
-                check(it in 1..1024)
+                check(it in 1..1024) { "Number \"$it\" error!" }
                 it * 2
             },
             encode = {
@@ -70,7 +71,7 @@ internal class AppRouting(
     }
 
     override fun toSecretKey(encoded: ByteArray): SecretKey {
-        TODO("AppRouting:toSecretKey")
+        return SecretKeySpec(encoded, "AES")
     }
 
     override fun decrypt(key: PrivateKey, encrypted: ByteArray): ByteArray {

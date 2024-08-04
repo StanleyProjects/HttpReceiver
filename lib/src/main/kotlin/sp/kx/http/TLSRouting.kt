@@ -3,6 +3,7 @@ package sp.kx.http
 import sp.kx.bytes.readInt
 import sp.kx.bytes.readLong
 import sp.kx.bytes.readUUID
+import sp.kx.bytes.toHEX
 import sp.kx.bytes.write
 import java.security.KeyPair
 import java.security.PrivateKey
@@ -59,33 +60,38 @@ abstract class TLSRouting : HttpRouting {
     ): TLSRequest {
         val encryptedSK = ByteArray(body.readInt())
         System.arraycopy(body, 4, encryptedSK, 0, encryptedSK.size)
+        println("encrypted secret key: ${encryptedSK.toHEX()}") // todo
         val encrypted = ByteArray(body.readInt(index = 4 + encryptedSK.size))
         System.arraycopy(body, 4 + encryptedSK.size + 4, encrypted, 0, encrypted.size)
+        println("encrypted payload: ${encrypted.toHEX()}") // todo
         val signature = ByteArray(body.readInt(index = 4 + encryptedSK.size + 4 + encrypted.size))
         System.arraycopy(body, 4 + encryptedSK.size + 4 + encrypted.size + 4, signature, 0, signature.size)
+        println("signature: ${signature.toHEX()}") // todo
         val secretKey = toSecretKey(decrypt(keyPair.private, encryptedSK))
         val payload = decrypt(secretKey, encrypted)
+        println("payload: ${payload.toHEX()}") // todo
         val signatureData = ByteArray(payload.size + 1 + encodedQuery.size + secretKey.encoded.size)
         System.arraycopy(payload, 0, signatureData, 0, payload.size)
         signatureData[payload.size] = methodCode
         System.arraycopy(encodedQuery, 0, signatureData, payload.size + 1, encodedQuery.size)
         System.arraycopy(secretKey.encoded, 0, signatureData, payload.size + 1 + encodedQuery.size, secretKey.encoded.size)
         val verified = verify(keyPair.public, signatureData, signature = signature)
-        if (!verified) TODO()
+        if (!verified) error("Not verified!")
         val encoded = ByteArray(payload.readInt())
         val time = payload.readLong(index = 4 + encoded.size).milliseconds
         val now = now()
         // todo now < time
         val maxTime = getMaxTime()
-        if (now - time > maxTime) TODO()
+        if (now - time > maxTime) error("Time error!")
         val id = payload.readUUID(index = 4 + encoded.size + 8)
         val requested = requested
         if (requested.containsKey(id)) {
-            TODO()
+            error("Request ID error!")
         } else if (requested.any { (_, it) -> now - it > maxTime }) {
             this.requested = requested.filterValues { now - it > maxTime}
         }
         this.requested += id to time
+        System.arraycopy(payload, 0, encoded, 0, encoded.size)
         return TLSRequest(
             secretKey = secretKey,
             id = id,
@@ -120,7 +126,8 @@ abstract class TLSRouting : HttpRouting {
             )
         }.map { body ->
             HttpResponse.OK(body = body)
-        }.getOrElse {
+        }.getOrElse { error ->
+            println("error: $error") // todo
             HttpResponse.InternalServerError(body = "todo".toByteArray())
         }
     }

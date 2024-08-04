@@ -30,10 +30,15 @@ fun main() {
     val certificate = keyStore.getCertificate(alias)
     logger.debug("public:key:hash: ${secrets.hash(certificate.publicKey.encoded).toHEX()}")
     val keyPair = KeyPair(certificate.publicKey, key)
-    val remotes: Remotes = FinalRemotes(address = URL("http://192.168.88.222:40631"))
+    val remotes: Remotes = FinalRemotes(
+        loggers = loggers,
+        secrets = secrets,
+        keyPair = keyPair,
+        address = URL("http://192.168.88.222:40631"),
+    )
     val number = 42
     val expected = number * 2
-    val actual = remotes.double(number = 42)
+    val actual = remotes.double(number = number)
     if (expected != actual) {
         error("expected: $expected, actual: $actual")
     }
