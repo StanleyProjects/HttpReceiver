@@ -52,12 +52,12 @@ abstract class TLSRouting : HttpRouting {
         return body
     }
 
-    internal fun toRequest(
+    internal fun toReceiver(
         keyPair: KeyPair,
         body: ByteArray,
         methodCode: Byte,
         encodedQuery: ByteArray,
-    ): TLSRequest {
+    ): TLSReceiver {
         val encryptedSK = ByteArray(body.readInt())
         System.arraycopy(body, 4, encryptedSK, 0, encryptedSK.size)
 //        println("encrypted secret key: ${encryptedSK.toHEX()}") // todo
@@ -92,7 +92,7 @@ abstract class TLSRouting : HttpRouting {
         }
         this.requested += id to time
         System.arraycopy(payload, 4, encoded, 0, encoded.size)
-        return TLSRequest(
+        return TLSReceiver(
             secretKey = secretKey,
             id = id,
             encoded = encoded,
@@ -110,20 +110,20 @@ abstract class TLSRouting : HttpRouting {
             val keyPair = getKeyPair()
             val methodCode = getMethodCode(request = request)
             val encodedQuery = request.query.toByteArray()
-            val tlsRequest = toRequest(
+            val tlsReceiver = toReceiver(
                 keyPair = keyPair,
                 body = body,
                 methodCode = methodCode,
                 encodedQuery = encodedQuery,
             )
-            val decoded = decode(tlsRequest.encoded)
+            val decoded = decode(tlsReceiver.encoded)
 //            println("decoded: $decoded") // todo
             toResponseBody(
-                secretKey = tlsRequest.secretKey,
+                secretKey = tlsReceiver.secretKey,
                 privateKey = keyPair.private,
                 methodCode = methodCode,
                 encodedQuery = encodedQuery,
-                requestID = tlsRequest.id,
+                requestID = tlsReceiver.id,
                 encoded = encode(transform(decoded)),
             )
         }.map { body ->

@@ -4,16 +4,16 @@ import sp.kx.bytes.toHEX
 import java.util.UUID
 import javax.crypto.SecretKey
 
-internal class TLSRequest(
+class TLSTransmitter(
     val secretKey: SecretKey,
     val id: UUID,
-    val encoded: ByteArray,
+    val body: ByteArray,
 ) {
     override fun toString(): String {
         return "{" +
             "secretKey: ${secretKey.encoded.toHEX()}, " +
             "id: $id, " +
-            "encoded: ${encoded.toHEX()}, " +
+            "body: ${body.toHEX()}, " +
             "}"
     }
 }

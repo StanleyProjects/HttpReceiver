@@ -1,7 +1,11 @@
 package sp.service.sample
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import sp.kx.bytes.readInt
 import sp.kx.bytes.write
@@ -25,6 +29,7 @@ internal class AppRouting(
     private val secrets: Secrets,
     private val keyPair: KeyPair,
     override var requested: Map<UUID, Duration>,
+    private val coroutineScope: CoroutineScope,
 ) : TLSRouting() {
     sealed interface Event {
         data object Quit : Event
@@ -44,7 +49,7 @@ internal class AppRouting(
     )
 
     private fun onGetQuit(request: HttpRequest): HttpResponse {
-        runBlocking {
+        coroutineScope.launch {
             _events.emit(Event.Quit)
         }
         return HttpResponse.OK()

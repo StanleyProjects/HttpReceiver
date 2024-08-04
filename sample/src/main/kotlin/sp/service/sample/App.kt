@@ -42,6 +42,7 @@ fun main() {
                 secrets = secrets,
                 keyPair = keyPair,
                 requested = mutableMapOf(),
+                coroutineScope = coroutineScope,
             )
             val receiver = HttpReceiver(routing)
             launch {

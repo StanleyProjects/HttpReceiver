@@ -23,6 +23,7 @@ tasks.getByName<KotlinCompile>("compileKotlin") {
 }
 
 dependencies {
+    implementation(project(":lib"))
     implementation("com.github.kepocnhh:Bytes:0.1.0-SNAPSHOT")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
