@@ -7,6 +7,7 @@ import sp.kx.bytes.write
 import java.security.KeyPair
 import java.util.UUID
 import javax.crypto.SecretKey
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
 class TLSTransmitter private constructor(
@@ -29,13 +30,12 @@ class TLSTransmitter private constructor(
             methodCode: Byte,
             encodedQuery: ByteArray,
             encoded: ByteArray,
+            id: UUID,
         ): TLSTransmitter {
-            val time = env.now()
-            val id = env.newUUID()
             val payload = ByteArray(4 + encoded.size + 8 + 16)
             payload.write(value = encoded.size)
             System.arraycopy(encoded, 0, payload, 4, encoded.size)
-            payload.write(index = 4 + encoded.size, time.inWholeMilliseconds)
+            payload.write(index = 4 + encoded.size, env.now().inWholeMilliseconds)
             payload.write(index = 4 + encoded.size + 8, id)
             val secretKey = env.newSecretKey()
             val encryptedSK = env.encrypt(keyPair.public, secretKey.encoded)

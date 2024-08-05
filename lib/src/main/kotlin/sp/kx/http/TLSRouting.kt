@@ -1,92 +1,29 @@
 package sp.kx.http
 
-import sp.kx.bytes.readInt
-import sp.kx.bytes.readLong
-import sp.kx.bytes.readUUID
-import sp.kx.bytes.write
 import java.security.KeyPair
-import java.security.PrivateKey
 import java.util.UUID
-import javax.crypto.SecretKey
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.milliseconds
 
 abstract class TLSRouting(
-    private val tlsEnv: TLSEnvironment,
+    private val env: TLSEnvironment,
 ) : HttpRouting {
     abstract val keyPair: KeyPair
     abstract var requested: Map<UUID, Duration>
 
-    private fun toResponseBody(
-        secretKey: SecretKey,
-        privateKey: PrivateKey,
-        methodCode: Byte,
-        encodedQuery: ByteArray,
-        requestID: UUID,
-        encoded: ByteArray,
-    ): ByteArray {
-        val payload = ByteArray(4 + encoded.size + 8)
-        payload.write(value = encoded.size)
-        System.arraycopy(encoded, 0, payload, 4, encoded.size)
-        payload.write(index = 4 + encoded.size, tlsEnv.now().inWholeMilliseconds)
-        val encrypted = tlsEnv.encrypt(secretKey, payload)
-        val signatureData = ByteArray(payload.size + 16 + 1 + encodedQuery.size)
-        System.arraycopy(payload, 0, signatureData, 0, payload.size)
-        signatureData.write(index = payload.size, requestID)
-        signatureData[payload.size + 16] = methodCode
-        System.arraycopy(encodedQuery, 0, signatureData, payload.size + 16 + 1, encodedQuery.size)
-        val signature = tlsEnv.sign(privateKey, signatureData)
-        val body = ByteArray(4 + encrypted.size + 4 + signature.size)
-        body.write(value = encrypted.size)
-        System.arraycopy(encrypted, 0, body, 4, encrypted.size)
-        body.write(index = 4 + encrypted.size, signature.size)
-        System.arraycopy(signature, 0, body, 4 + encrypted.size + 4, signature.size)
-        return body
-    }
-
-    private fun toReceiver(
-        methodCode: Byte,
-        encodedQuery: ByteArray,
-        body: ByteArray,
-    ): TLSReceiver {
-        val encryptedSK = ByteArray(body.readInt())
-        System.arraycopy(body, 4, encryptedSK, 0, encryptedSK.size)
-        val encrypted = ByteArray(body.readInt(index = 4 + encryptedSK.size))
-        System.arraycopy(body, 4 + encryptedSK.size + 4, encrypted, 0, encrypted.size)
-        val signature = ByteArray(body.readInt(index = 4 + encryptedSK.size + 4 + encrypted.size))
-        System.arraycopy(body, 4 + encryptedSK.size + 4 + encrypted.size + 4, signature, 0, signature.size)
-        val secretKey = tlsEnv.toSecretKey(tlsEnv.decrypt(keyPair.private, encryptedSK))
-        val payload = tlsEnv.decrypt(secretKey, encrypted)
-        val signatureData = ByteArray(payload.size + 1 + encodedQuery.size + secretKey.encoded.size)
-        System.arraycopy(payload, 0, signatureData, 0, payload.size)
-        signatureData[payload.size] = methodCode
-        System.arraycopy(encodedQuery, 0, signatureData, payload.size + 1, encodedQuery.size)
-        System.arraycopy(secretKey.encoded, 0, signatureData, payload.size + 1 + encodedQuery.size, secretKey.encoded.size)
-        val verified = tlsEnv.verify(keyPair.public, signatureData, signature = signature)
-        if (!verified) error("Not verified!")
-        val encoded = ByteArray(payload.readInt())
-        val time = payload.readLong(index = 4 + encoded.size).milliseconds
-        val now = tlsEnv.now()
+    private fun onReceiver(request: TLSReceiver) {
+        val now = env.now()
         // todo now < time
-        val maxTime = tlsEnv.maxTime
-        if (now - time > maxTime) error("Time error!")
-        val id = payload.readUUID(index = 4 + encoded.size + 8)
+        if (now - request.time > env.maxTime) error("Time error!")
         val requested = this.requested
-        if (requested.containsKey(id)) {
+        if (requested.containsKey(request.id)) {
             error("Request ID error!")
-        } else if (requested.any { (_, it) -> now - it > maxTime }) {
-            this.requested = requested.filterValues { now - it > maxTime}
+        } else if (requested.any { (_, it) -> now - it > env.maxTime }) {
+            this.requested = requested.filterValues { now - it > env.maxTime}
         }
-        this.requested += id to time
-        System.arraycopy(payload, 4, encoded, 0, encoded.size)
-        return TLSReceiver(
-            secretKey = secretKey,
-            id = id,
-            encoded = encoded,
-        )
+        this.requested += request.id to request.time
     }
 
-    fun <REQ : Any, RES : Any> map(
+    protected fun <REQ : Any, RES : Any> map(
         request: HttpRequest,
         decode: (ByteArray) -> REQ,
         transform: (REQ) -> RES,
@@ -96,14 +33,18 @@ abstract class TLSRouting(
             val body = request.body ?: error("No body!")
             val methodCode = TLSEnvironment.getMethodCode(method = request.method)
             val encodedQuery = request.query.toByteArray()
-            val tlsReceiver = toReceiver(
+            val tlsReceiver = TLSReceiver.build(
+                env = env,
+                keyPair = keyPair,
                 methodCode = methodCode,
                 encodedQuery = encodedQuery,
                 body = body,
             )
+            onReceiver(tlsReceiver)
             val decoded = decode(tlsReceiver.encoded)
 //            println("decoded: $decoded") // todo
-            toResponseBody(
+            TLSReceiver.toResponseBody(
+                env = env,
                 secretKey = tlsReceiver.secretKey,
                 privateKey = keyPair.private,
                 methodCode = methodCode,
