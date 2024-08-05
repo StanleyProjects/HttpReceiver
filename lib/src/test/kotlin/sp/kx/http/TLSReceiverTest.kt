@@ -3,6 +3,7 @@ package sp.kx.http
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotEquals
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.util.Date
@@ -144,5 +145,54 @@ internal class TLSReceiverTest {
             encoded = encoded,
         )
         assertEquals(expected, actual)
+    }
+
+    @Test
+    fun buildVerifiedErrorTest() {
+        val time = 123.milliseconds
+        val secretKey = MockSecretKey(encoded = mockByteArray(1))
+        val encryptedSK = mockByteArray(11)
+        val encoded = mockByteArray(4)
+        val id = mockUUID(42)
+        val payload = toByteArray(encoded.size) + encoded + toByteArray(time.inWholeMilliseconds) + toByteArray(id)
+        val encrypted = mockByteArray(12)
+        val signature = mockByteArray(131)
+        val signatureWrong = mockByteArray(121)
+        check(!signature.contentEquals(signatureWrong))
+        val methodCode: Byte = 23
+        val encodedQuery = mockByteArray(3)
+        val signatureData = payload + methodCode + encodedQuery + secretKey.encoded
+        val keyPair = mockKeyPair(
+            privateKey = MockPrivateKey(mockByteArray(21)),
+            publicKey = MockPublicKey(mockByteArray(22)),
+        )
+        val env = MockTLSEnvironment(
+            timeProvider = { time },
+            newSecretKeyProvider = { secretKey },
+            items = listOf(
+                Triple(keyPair.private.encoded, secretKey.encoded, encryptedSK),
+                Triple(secretKey.encoded, payload, encrypted),
+            ),
+            keys = listOf(
+                secretKey.encoded to secretKey,
+            ),
+            signs = listOf(
+                keyPair to (signatureData to signature),
+            ),
+        )
+        val body = toByteArray(encryptedSK.size) + encryptedSK +
+                toByteArray(encrypted.size) + encrypted +
+                toByteArray(signatureWrong.size) + signatureWrong
+        val expected = "Not verified!"
+        val throwable: Throwable = assertThrows(IllegalStateException::class.java) {
+            TLSReceiver.build(
+                env = env,
+                keyPair = keyPair,
+                methodCode = methodCode,
+                encodedQuery = encodedQuery,
+                body = body,
+            )
+        }
+        assertEquals(expected, throwable.message)
     }
 }
