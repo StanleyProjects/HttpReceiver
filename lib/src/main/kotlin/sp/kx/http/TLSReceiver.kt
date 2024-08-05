@@ -7,6 +7,8 @@ import sp.kx.bytes.toHEX
 import sp.kx.bytes.write
 import java.security.KeyPair
 import java.security.PrivateKey
+import java.util.Date
+import java.util.Objects
 import java.util.UUID
 import javax.crypto.SecretKey
 import kotlin.time.Duration
@@ -22,8 +24,25 @@ internal class TLSReceiver(
         return "{" +
             "secretKey: \"${secretKey.encoded.toHEX()}\", " +
             "id: $id, " +
+            "time: ${Date(time.inWholeMilliseconds)}, " +
             "encoded: \"${encoded.toHEX()}\"" +
             "}"
+    }
+
+    override fun equals(other: Any?): Boolean {
+        return when (other) {
+            is TLSReceiver -> secretKey.encoded.contentEquals(other.secretKey.encoded) && id == other.id && time == other.time && encoded.contentEquals(other.encoded)
+            else -> false
+        }
+    }
+
+    override fun hashCode(): Int {
+        return Objects.hash(
+            secretKey.encoded.contentHashCode(),
+            id,
+            time,
+            encoded.contentHashCode(),
+        )
     }
 
     companion object {
