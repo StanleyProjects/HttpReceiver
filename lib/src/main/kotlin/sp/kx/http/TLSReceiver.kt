@@ -20,9 +20,9 @@ internal class TLSReceiver(
 ) {
     override fun toString(): String {
         return "{" +
-            "secretKey: ${secretKey.encoded.toHEX()}, " +
+            "secretKey: \"${secretKey.encoded.toHEX()}\", " +
             "id: $id, " +
-            "encoded: ${encoded.toHEX()}, " +
+            "encoded: \"${encoded.toHEX()}\"" +
             "}"
     }
 
