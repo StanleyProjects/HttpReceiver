@@ -37,11 +37,22 @@ internal class MockTLSEnvironment(
     }
 
     override fun encrypt(key: SecretKey, decrypted: ByteArray): ByteArray {
-        TODO("encrypt")
+        for ((ek, d, e) in items) {
+            if (d.contentEquals(decrypted) && ek.contentEquals(key.encoded)) {
+                return e
+            }
+        }
+        TODO("MockTLSEnvironment:encrypt(key: ${key.encoded.toHEX()}, decrypted: ${decrypted.toHEX()})")
     }
 
     override fun sign(key: PrivateKey, encoded: ByteArray): ByteArray {
-        TODO("sign")
+        for ((keyPair, it) in signs) {
+            val (e, s) = it
+            if (e.contentEquals(encoded) && keyPair.private.encoded.contentEquals(key.encoded)) {
+                return s
+            }
+        }
+        TODO("MockTLSEnvironment:sign(key: ${key.encoded.toHEX()}, encoded: ${encoded.toHEX()})\n${signs.map { (_, it) -> "e: ${it.first.toHEX()}, s: ${it.second.toHEX()}" }}")
     }
 
     override fun decrypt(key: PrivateKey, encrypted: ByteArray): ByteArray {

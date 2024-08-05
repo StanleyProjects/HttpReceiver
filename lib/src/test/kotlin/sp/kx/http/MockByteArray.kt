@@ -6,7 +6,7 @@ import java.util.UUID
 internal fun mockByteArray(size: Int): ByteArray {
     val bytes = ByteArray(size)
     for (i in 0 until size) {
-        bytes[i] = i.toByte()
+        bytes[i] = (size - i).toByte()
     }
     return bytes
 }
