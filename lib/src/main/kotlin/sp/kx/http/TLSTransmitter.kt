@@ -5,22 +5,38 @@ import sp.kx.bytes.readLong
 import sp.kx.bytes.toHEX
 import sp.kx.bytes.write
 import java.security.KeyPair
+import java.util.Objects
 import java.util.UUID
 import javax.crypto.SecretKey
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
-class TLSTransmitter private constructor(
+class TLSTransmitter internal constructor(
     val secretKey: SecretKey,
     val id: UUID,
     val body: ByteArray,
 ) {
     override fun toString(): String {
         return "{" +
-            "secretKey: ${secretKey.encoded.toHEX()}, " +
+            "secretKey: \"${secretKey.encoded.toHEX()}\", " +
             "id: $id, " +
-            "body: ${body.toHEX()}, " +
+            "body: \"${body.toHEX()}\"" +
             "}"
+    }
+
+    override fun equals(other: Any?): Boolean {
+        return when (other) {
+            is TLSTransmitter -> secretKey.encoded.contentEquals(other.secretKey.encoded) && id == other.id && body.contentEquals(other.body)
+            else -> false
+        }
+    }
+
+    override fun hashCode(): Int {
+        return Objects.hash(
+            secretKey.encoded.contentHashCode(),
+            id,
+            body.contentHashCode(),
+        )
     }
 
     companion object {
