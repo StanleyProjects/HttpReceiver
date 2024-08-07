@@ -135,7 +135,7 @@ internal class TLSTransmitterTest {
         val timeNow = time + 1.seconds
         check(timeNow >= time)
         val timeMax = 1.minutes
-        check(timeNow - time < timeMax)
+        check(timeNow - time <= timeMax)
         val id = mockUUID(13)
         val keyPair = mockKeyPair(
             privateKey = MockPrivateKey(mockByteArray(14)),
@@ -151,7 +151,7 @@ internal class TLSTransmitterTest {
         val signature = mockByteArray(22)
         val env = MockTLSEnvironment(
             timeProvider = { timeNow },
-            maxTime = timeMax,
+            timeMax = timeMax,
             items = listOf(
                 Triple(secretKey.encoded, payload, encrypted),
             ),
@@ -216,6 +216,7 @@ internal class TLSTransmitterTest {
         val encrypted = mockByteArray(21)
         val signature = mockByteArray(22)
         val env = MockTLSEnvironment(
+            timeMax = timeMax,
             timeProvider = { timeNow },
             items = listOf(
                 Triple(secretKey.encoded, payload, encrypted),
@@ -260,7 +261,7 @@ internal class TLSTransmitterTest {
         check(!signature.contentEquals(signatureWrong))
         val env = MockTLSEnvironment(
             timeProvider = { timeNow },
-            maxTime = timeMax,
+            timeMax = timeMax,
             items = listOf(
                 Triple(secretKey.encoded, payload, encrypted),
             ),

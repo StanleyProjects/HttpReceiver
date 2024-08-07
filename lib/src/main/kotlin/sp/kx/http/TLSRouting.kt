@@ -7,20 +7,20 @@ import kotlin.time.Duration
 abstract class TLSRouting(
     private val env: TLSEnvironment,
 ) : HttpRouting {
-    abstract val keyPair: KeyPair
-    abstract var requested: Map<UUID, Duration>
+    protected abstract val keyPair: KeyPair
+    protected abstract var requested: Map<UUID, Duration>
 
-    private fun onReceiver(request: TLSReceiver) {
-        val now = env.now()
-        // todo now < time
-        if (now - request.time > env.maxTime) error("Time error!")
+    internal fun onReceiver(receiver: TLSReceiver) {
+        val timeNow = env.now()
+        if (timeNow < receiver.time) error("Time error!")
+        if (timeNow - receiver.time > env.timeMax) error("Time is up!")
         val requested = this.requested
-        if (requested.containsKey(request.id)) {
+        if (requested.containsKey(receiver.id)) {
             error("Request ID error!")
-        } else if (requested.any { (_, it) -> now - it > env.maxTime }) {
-            this.requested = requested.filterValues { now - it > env.maxTime}
+        } else if (requested.any { (_, it) -> timeNow - it > env.timeMax }) {
+            this.requested = requested.filterValues { timeNow - it < env.timeMax }
         }
-        this.requested += request.id to request.time
+        this.requested += receiver.id to receiver.time
     }
 
     protected fun <REQ : Any, RES : Any> map(

@@ -9,7 +9,7 @@ import javax.crypto.SecretKey
 import kotlin.time.Duration
 
 internal class MockTLSEnvironment(
-    override val maxTime: Duration = Duration.ZERO,
+    override val timeMax: Duration = Duration.ZERO,
     private val timeProvider: MockProvider<Duration> = MockProvider { Duration.ZERO },
     private val newUUIDProvider: MockProvider<UUID> = MockProvider { mockUUID() },
     private val newSecretKeyProvider: MockProvider<SecretKey> = MockProvider { MockSecretKey() },

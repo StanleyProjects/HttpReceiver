@@ -15,4 +15,8 @@ internal class MockTLSRouting(
         val route = routes[request.method] ?: TODO("MockTLSRouting:route(${request.method}/${request.query})")
         return route(request)
     }
+
+    fun requested(): Map<UUID, Duration> {
+        return requested
+    }
 }
