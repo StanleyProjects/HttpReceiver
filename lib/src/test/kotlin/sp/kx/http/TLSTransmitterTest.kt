@@ -4,10 +4,13 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 import sp.kx.bytes.toHEX
 import java.util.Objects
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
 internal class TLSTransmitterTest {
     @Test
@@ -129,6 +132,10 @@ internal class TLSTransmitterTest {
     @Test
     fun fromResponseTest() {
         val time = 12.milliseconds
+        val timeNow = time + 1.seconds
+        check(timeNow >= time)
+        val timeMax = 1.minutes
+        check(timeNow - time < timeMax)
         val id = mockUUID(13)
         val keyPair = mockKeyPair(
             privateKey = MockPrivateKey(mockByteArray(14)),
@@ -143,6 +150,8 @@ internal class TLSTransmitterTest {
         val signatureData = payload + toByteArray(id) + methodCode + encodedQuery
         val signature = mockByteArray(22)
         val env = MockTLSEnvironment(
+            timeProvider = { timeNow },
+            maxTime = timeMax,
             items = listOf(
                 Triple(secretKey.encoded, payload, encrypted),
             ),
@@ -161,5 +170,116 @@ internal class TLSTransmitterTest {
             body = body,
         )
         assertTrue(encoded.contentEquals(actual), "expected: ${encoded.toHEX()}, actual: ${actual.toHEX()}")
+    }
+
+    @Test
+    fun fromResponseTimeErrorTest() {
+        val time = 12.milliseconds
+        val timeNow = time - 1.seconds
+        check(timeNow < time)
+        val secretKey = MockSecretKey(encoded = mockByteArray(16))
+        val encoded = mockByteArray(19)
+        val payload = toByteArray(encoded.size) + encoded + toByteArray(time.inWholeMilliseconds)
+        val encrypted = mockByteArray(21)
+        val signature = mockByteArray(22)
+        val env = MockTLSEnvironment(
+            timeProvider = { timeNow },
+            items = listOf(
+                Triple(secretKey.encoded, payload, encrypted),
+            ),
+        )
+        val body = toByteArray(encrypted.size) + encrypted + toByteArray(signature.size) + signature
+        val throwable: IllegalStateException = assertThrows(IllegalStateException::class.java) {
+            TLSTransmitter.fromResponse(
+                env = env,
+                keyPair = mockKeyPair(),
+                methodCode = 17,
+                encodedQuery = mockByteArray(18),
+                secretKey = secretKey,
+                requestID = mockUUID(),
+                body = body,
+            )
+        }
+        assertEquals("Time error!", throwable.message)
+    }
+
+    @Test
+    fun fromResponseTimeIsUpTest() {
+        val time = 12.milliseconds
+        val timeMax = 1.minutes
+        val timeNow = time + 1.seconds + timeMax
+        check(timeNow >= time)
+        check(timeNow - time >= timeMax)
+        val secretKey = MockSecretKey(encoded = mockByteArray(16))
+        val encoded = mockByteArray(19)
+        val payload = toByteArray(encoded.size) + encoded + toByteArray(time.inWholeMilliseconds)
+        val encrypted = mockByteArray(21)
+        val signature = mockByteArray(22)
+        val env = MockTLSEnvironment(
+            timeProvider = { timeNow },
+            items = listOf(
+                Triple(secretKey.encoded, payload, encrypted),
+            ),
+        )
+        val body = toByteArray(encrypted.size) + encrypted + toByteArray(signature.size) + signature
+        val throwable: IllegalStateException = assertThrows(IllegalStateException::class.java) {
+            TLSTransmitter.fromResponse(
+                env = env,
+                keyPair = mockKeyPair(),
+                methodCode = 17,
+                encodedQuery = mockByteArray(18),
+                secretKey = secretKey,
+                requestID = mockUUID(),
+                body = body,
+            )
+        }
+        assertEquals("Time is up!", throwable.message)
+    }
+
+    @Test
+    fun fromResponseVerifiedErrorTest() {
+        val time = 12.milliseconds
+        val timeNow = time + 1.seconds
+        check(timeNow >= time)
+        val timeMax = 1.minutes
+        check(timeNow - time < timeMax)
+        val id = mockUUID(13)
+        val keyPair = mockKeyPair(
+            privateKey = MockPrivateKey(mockByteArray(14)),
+            publicKey = MockPublicKey(mockByteArray(15)),
+        )
+        val secretKey = MockSecretKey(encoded = mockByteArray(16))
+        val methodCode: Byte = 17
+        val encodedQuery = mockByteArray(18)
+        val encoded = mockByteArray(19)
+        val payload = toByteArray(encoded.size) + encoded + toByteArray(time.inWholeMilliseconds)
+        val encrypted = mockByteArray(21)
+        val signatureData = payload + toByteArray(id) + methodCode + encodedQuery
+        val signature = mockByteArray(22)
+        val signatureWrong = mockByteArray(23)
+        check(!signature.contentEquals(signatureWrong))
+        val env = MockTLSEnvironment(
+            timeProvider = { timeNow },
+            maxTime = timeMax,
+            items = listOf(
+                Triple(secretKey.encoded, payload, encrypted),
+            ),
+            signs = listOf(
+                keyPair to (signatureData to signatureWrong),
+            ),
+        )
+        val body = toByteArray(encrypted.size) + encrypted + toByteArray(signature.size) + signature
+        val throwable: IllegalStateException = assertThrows(IllegalStateException::class.java) {
+            TLSTransmitter.fromResponse(
+                env = env,
+                keyPair = keyPair,
+                methodCode = methodCode,
+                encodedQuery = encodedQuery,
+                secretKey = secretKey,
+                requestID = id,
+                body = body,
+            )
+        }
+        assertEquals("Signature is invalid!", throwable.message)
     }
 }

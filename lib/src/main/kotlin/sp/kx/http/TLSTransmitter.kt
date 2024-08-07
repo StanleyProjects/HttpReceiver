@@ -91,7 +91,7 @@ class TLSTransmitter internal constructor(
             val encoded = ByteArray(payload.readInt())
             val time = payload.readLong(index = 4 + encoded.size).milliseconds
             val now = env.now()
-            // todo now < requestTime
+            if (now < time) error("Time error!")
             val maxTime = env.maxTime
             if (now - time > maxTime) error("Time is up!")
             val signature = ByteArray(body.readInt(index = 4 + encrypted.size))
