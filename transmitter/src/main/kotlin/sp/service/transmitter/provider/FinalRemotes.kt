@@ -9,7 +9,6 @@ import sp.kx.http.TLSEnvironment
 import sp.kx.http.TLSTransmitter
 import java.net.URL
 import java.security.KeyPair
-import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 internal class FinalRemotes(
@@ -41,7 +40,6 @@ internal class FinalRemotes(
             methodCode = methodCode,
             encodedQuery = encodedQuery,
             encoded = requestEncoded,
-            id = UUID.randomUUID(),
         )
         return client.newCall(
             request = Request.Builder()

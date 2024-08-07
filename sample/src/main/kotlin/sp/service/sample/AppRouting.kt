@@ -9,13 +9,11 @@ import sp.kx.bytes.write
 import sp.kx.http.HttpRequest
 import sp.kx.http.HttpResponse
 import sp.kx.http.TLSEnvironment
-import sp.kx.http.TLSReceiver
 import sp.kx.http.TLSRouting
 import sp.service.sample.provider.Loggers
 import java.security.KeyPair
 import java.util.UUID
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.milliseconds
 
 internal class AppRouting(
     loggers: Loggers,
