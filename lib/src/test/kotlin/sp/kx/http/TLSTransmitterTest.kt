@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import sp.kx.bytes.toHEX
 import java.util.Objects
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -123,5 +124,42 @@ internal class TLSTransmitterTest {
             body = body,
         )
         assertEquals(expected, actual)
+    }
+
+    @Test
+    fun fromResponseTest() {
+        val time = 12.milliseconds
+        val id = mockUUID(13)
+        val keyPair = mockKeyPair(
+            privateKey = MockPrivateKey(mockByteArray(14)),
+            publicKey = MockPublicKey(mockByteArray(15)),
+        )
+        val secretKey = MockSecretKey(encoded = mockByteArray(16))
+        val methodCode: Byte = 17
+        val encodedQuery = mockByteArray(18)
+        val encoded = mockByteArray(19)
+        val payload = toByteArray(encoded.size) + encoded + toByteArray(time.inWholeMilliseconds)
+        val encrypted = mockByteArray(21)
+        val signatureData = payload + toByteArray(id) + methodCode + encodedQuery
+        val signature = mockByteArray(22)
+        val env = MockTLSEnvironment(
+            items = listOf(
+                Triple(secretKey.encoded, payload, encrypted),
+            ),
+            signs = listOf(
+                keyPair to (signatureData to signature),
+            ),
+        )
+        val body = toByteArray(encrypted.size) + encrypted + toByteArray(signature.size) + signature
+        val actual = TLSTransmitter.fromResponse(
+            env = env,
+            keyPair = keyPair,
+            methodCode = methodCode,
+            encodedQuery = encodedQuery,
+            secretKey = secretKey,
+            requestID = id,
+            body = body,
+        )
+        assertTrue(encoded.contentEquals(actual), "expected: ${encoded.toHEX()}, actual: ${actual.toHEX()}")
     }
 }

@@ -85,24 +85,24 @@ class TLSTransmitter internal constructor(
             requestID: UUID,
             body: ByteArray,
         ): ByteArray {
-            val encryptedPayload = ByteArray(body.readInt())
-            System.arraycopy(body, 4, encryptedPayload, 0, encryptedPayload.size)
-            val payload = env.decrypt(secretKey, encryptedPayload)
+            val encrypted = ByteArray(body.readInt())
+            System.arraycopy(body, 4, encrypted, 0, encrypted.size)
+            val payload = env.decrypt(secretKey, encrypted)
             val encoded = ByteArray(payload.readInt())
             val time = payload.readLong(index = 4 + encoded.size).milliseconds
             val now = env.now()
             // todo now < requestTime
             val maxTime = env.maxTime
-            if (now - time > maxTime) TODO("FinalRemotes:onDouble:time")
-            val signature = ByteArray(body.readInt(index = 4 + encryptedPayload.size))
-            System.arraycopy(body, 4 + encryptedPayload.size + 4, signature, 0, signature.size)
+            if (now - time > maxTime) error("Time is up!")
+            val signature = ByteArray(body.readInt(index = 4 + encrypted.size))
+            System.arraycopy(body, 4 + encrypted.size + 4, signature, 0, signature.size)
             val signatureData = ByteArray(payload.size + 16 + 1 + encodedQuery.size)
             System.arraycopy(payload, 0, signatureData, 0, payload.size)
             signatureData.write(index = payload.size, requestID)
             signatureData[payload.size + 16] = methodCode
             System.arraycopy(encodedQuery, 0, signatureData, payload.size + 16 + 1, encodedQuery.size)
             val verified = env.verify(keyPair.public, signatureData, signature)
-            if (!verified) TODO("FinalRemotes:onDouble:!verified")
+            if (!verified) error("Signature is invalid!")
             System.arraycopy(payload, 4, encoded, 0, encoded.size)
             return encoded
         }
