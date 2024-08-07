@@ -46,12 +46,12 @@ class TLSTransmitter internal constructor(
             methodCode: Byte,
             encodedQuery: ByteArray,
             encoded: ByteArray,
-            id: UUID,
         ): TLSTransmitter {
             val payload = ByteArray(4 + encoded.size + 8 + 16)
             payload.write(value = encoded.size)
             System.arraycopy(encoded, 0, payload, 4, encoded.size)
             payload.write(index = 4 + encoded.size, env.now().inWholeMilliseconds)
+            val id = env.newUUID()
             payload.write(index = 4 + encoded.size + 8, id)
             val secretKey = env.newSecretKey()
             val encryptedSK = env.encrypt(keyPair.public, secretKey.encoded)

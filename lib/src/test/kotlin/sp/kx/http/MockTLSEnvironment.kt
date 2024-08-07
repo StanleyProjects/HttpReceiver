@@ -4,12 +4,14 @@ import sp.kx.bytes.toHEX
 import java.security.KeyPair
 import java.security.PrivateKey
 import java.security.PublicKey
+import java.util.UUID
 import javax.crypto.SecretKey
 import kotlin.time.Duration
 
 internal class MockTLSEnvironment(
     override val maxTime: Duration = Duration.ZERO,
     private val timeProvider: MockProvider<Duration> = MockProvider { Duration.ZERO },
+    private val newUUIDProvider: MockProvider<UUID> = MockProvider { mockUUID() },
     private val newSecretKeyProvider: MockProvider<SecretKey> = MockProvider { MockSecretKey() },
     private val items: List<Triple<ByteArray, ByteArray, ByteArray>> = emptyList(),
     private val keys: List<Pair<ByteArray, SecretKey>> = emptyList(),
@@ -17,6 +19,10 @@ internal class MockTLSEnvironment(
 ) : TLSEnvironment {
     override fun now(): Duration {
         return timeProvider.provide()
+    }
+
+    override fun newUUID(): UUID {
+        return newUUIDProvider.provide()
     }
 
     override fun newSecretKey(): SecretKey {
@@ -33,7 +39,12 @@ internal class MockTLSEnvironment(
     }
 
     override fun encrypt(key: PublicKey, decrypted: ByteArray): ByteArray {
-        TODO("encrypt")
+        for ((ek, d, e) in items) {
+            if (d.contentEquals(decrypted) && ek.contentEquals(key.encoded)) {
+                return e
+            }
+        }
+        TODO("MockTLSEnvironment:(async)encrypt(key: ${key.encoded.toHEX()}, decrypted: ${decrypted.toHEX()})")
     }
 
     override fun encrypt(key: SecretKey, decrypted: ByteArray): ByteArray {

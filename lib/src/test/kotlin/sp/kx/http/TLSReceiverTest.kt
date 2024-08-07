@@ -100,20 +100,20 @@ internal class TLSReceiverTest {
 
     @Test
     fun buildTest() {
-        val time = 123.milliseconds
-        val secretKey = MockSecretKey(encoded = mockByteArray(1))
-        val encryptedSK = mockByteArray(11)
-        val encoded = mockByteArray(4)
-        val id = mockUUID(42)
+        val time = 12.milliseconds
+        val secretKey = MockSecretKey(encoded = mockByteArray(13))
+        val encryptedSK = mockByteArray(14)
+        val encoded = mockByteArray(15)
+        val id = mockUUID(16)
         val payload = toByteArray(encoded.size) + encoded + toByteArray(time.inWholeMilliseconds) + toByteArray(id)
-        val encrypted = mockByteArray(12)
-        val signature = mockByteArray(13)
-        val methodCode: Byte = 23
-        val encodedQuery = mockByteArray(3)
+        val encrypted = mockByteArray(17)
+        val signature = mockByteArray(18)
+        val methodCode: Byte = 19
+        val encodedQuery = mockByteArray(21)
         val signatureData = payload + methodCode + encodedQuery + secretKey.encoded
         val keyPair = mockKeyPair(
-            privateKey = MockPrivateKey(mockByteArray(21)),
-            publicKey = MockPublicKey(mockByteArray(22)),
+            privateKey = MockPrivateKey(mockByteArray(22)),
+            publicKey = MockPublicKey(mockByteArray(23)),
         )
         val env = MockTLSEnvironment(
             timeProvider = { time },

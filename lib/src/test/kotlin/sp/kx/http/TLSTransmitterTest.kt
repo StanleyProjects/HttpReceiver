@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.util.Objects
+import kotlin.time.Duration.Companion.milliseconds
 
 internal class TLSTransmitterTest {
     @Test
@@ -75,5 +76,52 @@ internal class TLSTransmitterTest {
             assertFalse(it == it2)
         }
         assertNotEquals(it, Unit)
+    }
+
+    @Test
+    fun buildTest() {
+        val time = 12.milliseconds
+        val id = mockUUID(13)
+        val secretKey = MockSecretKey(encoded = mockByteArray(14))
+        val encryptedSK = mockByteArray(15)
+        val keyPair = mockKeyPair(
+            privateKey = MockPrivateKey(mockByteArray(16)),
+            publicKey = MockPublicKey(mockByteArray(17)),
+        )
+        val encoded = mockByteArray(18)
+        val payload = toByteArray(encoded.size) + encoded + toByteArray(time.inWholeMilliseconds) + toByteArray(id)
+        val encrypted = mockByteArray(19)
+        val methodCode: Byte = 21
+        val encodedQuery = mockByteArray(22)
+        val signatureData = payload + methodCode + encodedQuery + secretKey.encoded
+        val signature = mockByteArray(23)
+        val env = MockTLSEnvironment(
+            timeProvider = { time },
+            newSecretKeyProvider = { secretKey },
+            newUUIDProvider = { id },
+            items = listOf(
+                Triple(keyPair.public.encoded, secretKey.encoded, encryptedSK),
+                Triple(secretKey.encoded, payload, encrypted),
+            ),
+            signs = listOf(
+                keyPair to (signatureData to signature),
+            ),
+        )
+        val actual = TLSTransmitter.build(
+            env = env,
+            keyPair = keyPair,
+            methodCode = methodCode,
+            encodedQuery = encodedQuery,
+            encoded = encoded,
+        )
+        val body = toByteArray(encryptedSK.size) + encryptedSK +
+                toByteArray(encrypted.size) + encrypted +
+                toByteArray(signature.size) + signature
+        val expected = mockTLSTransmitter(
+            secretKey = secretKey,
+            id = id,
+            body = body,
+        )
+        assertEquals(expected, actual)
     }
 }
