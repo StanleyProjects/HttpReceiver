@@ -167,4 +167,82 @@ internal class TLSRoutingTest {
         }
         assertEquals("Request ID error!", throwable.message)
     }
+
+    @Test
+    fun mapTest() {
+        val time = 12.milliseconds
+        val secretKey = MockSecretKey(encoded = mockByteArray(13))
+        val encryptedSK = mockByteArray(14)
+        val responseDecoded: Int = 654321
+        val requestDecoded: String = responseDecoded.toString()
+        val requestEncoded = requestDecoded.toByteArray()
+        val id = mockUUID(0xdcba)
+        val requestPayload = toByteArray(requestEncoded.size) + requestEncoded + toByteArray(time.inWholeMilliseconds) + toByteArray(id)
+        val requestEncrypted = mockByteArray(17)
+        val requestSignature = mockByteArray(18)
+        val methodCode: Byte = 1
+        val query = "foobarbaz"
+        val encodedQuery = query.toByteArray()
+        val requestSignatureData = requestPayload + methodCode + encodedQuery + secretKey.encoded
+        val keyPair = mockKeyPair(
+            privateKey = MockPrivateKey(mockByteArray(22)),
+            publicKey = MockPublicKey(mockByteArray(23)),
+        )
+        val responseEncoded = mockByteArray(12)
+        val responsePayload = toByteArray(responseEncoded.size) + responseEncoded + toByteArray(time.inWholeMilliseconds)
+        val responseEncrypted = mockByteArray(13)
+        val responseSignatureData = responsePayload + toByteArray(id) + methodCode + encodedQuery
+        val responseSignature = mockByteArray(18)
+        val env = MockTLSEnvironment(
+            timeProvider = { time },
+            newSecretKeyProvider = { secretKey },
+            items = listOf(
+                Triple(keyPair.private.encoded, secretKey.encoded, encryptedSK),
+                Triple(secretKey.encoded, requestPayload, requestEncrypted),
+                Triple(secretKey.encoded, responsePayload, responseEncrypted),
+            ),
+            keys = listOf(
+                secretKey.encoded to secretKey,
+            ),
+            signs = listOf(
+                keyPair to (requestSignatureData to requestSignature),
+                keyPair to (responseSignatureData to responseSignature),
+            ),
+        )
+        val requestBody = toByteArray(encryptedSK.size) + encryptedSK +
+            toByteArray(requestEncrypted.size) + requestEncrypted +
+            toByteArray(requestSignature.size) + requestSignature
+        val routing = MockTLSRouting(
+            keyPair = keyPair,
+            env = env,
+        )
+        val responseBody = toByteArray(responseEncrypted.size) + responseEncrypted + toByteArray(responseSignature.size) + responseSignature
+        val expected = mockHttpResponse(
+            version = "1.1",
+            code = 200,
+            message = "OK",
+            headers = emptyMap(),
+            body = responseBody,
+        )
+        val actual = routing.test(
+            request = mockHttpRequest(
+                method = "POST",
+                query = query,
+                body = requestBody,
+            ),
+            decode = { bytes ->
+                check(bytes.contentEquals(requestEncoded))
+                requestDecoded
+            },
+            transform = { decoded ->
+                check(requestDecoded == decoded)
+                responseDecoded
+            },
+            encode = { decoded ->
+                check(responseDecoded == decoded)
+                responseEncoded
+            },
+        )
+        assertEquals(expected, actual)
+    }
 }

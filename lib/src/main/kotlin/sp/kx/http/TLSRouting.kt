@@ -55,7 +55,7 @@ abstract class TLSRouting(
         }.map { body ->
             HttpResponse.OK(body = body)
         }.getOrElse { error ->
-//            println("error: $error") // todo
+            error("error: $error") // todo
             HttpResponse.InternalServerError(body = "todo".toByteArray())
         }
     }

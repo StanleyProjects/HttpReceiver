@@ -53,7 +53,7 @@ internal class MockTLSEnvironment(
                 return e
             }
         }
-        TODO("MockTLSEnvironment:encrypt(key: ${key.encoded.toHEX()}, decrypted: ${decrypted.toHEX()})")
+        TODO("MockTLSEnvironment:encrypt(key(${key.encoded.size}): ${key.encoded.toHEX()}, decrypted(${decrypted.size}): ${decrypted.toHEX()})\n${items.map { (k, d, e) -> "\n\tk(${k.size}): ${k.toHEX()}\n\td(${d.size}): ${d.toHEX()}\n\te(${e.size}): ${e.toHEX()}" }}")
     }
 
     override fun sign(key: PrivateKey, encoded: ByteArray): ByteArray {
@@ -91,6 +91,6 @@ internal class MockTLSEnvironment(
                 return s.contentEquals(signature)
             }
         }
-        TODO("MockTLSEnvironment:verify(key: ${key.encoded.toHEX()}, encoded: ${encoded.toHEX()}, signature: ${signature.toHEX()})")
+        TODO("MockTLSEnvironment:verify(key(${key.encoded.size}): ${key.encoded.toHEX()}, encoded(${encoded.size}): ${encoded.toHEX()}, signature(${signature.size}): ${signature.toHEX()})\n${signs.map { (k, it) -> "\n\tk(${k.public.encoded.size}): ${k.public.encoded.toHEX()}\n\te(${it.first.size}): ${it.first.toHEX()}\n\ts(${it.second.size}): ${it.second.toHEX()}" }}")
     }
 }
