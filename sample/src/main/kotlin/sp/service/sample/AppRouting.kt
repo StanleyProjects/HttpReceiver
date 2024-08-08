@@ -9,6 +9,7 @@ import sp.kx.bytes.write
 import sp.kx.http.HttpRequest
 import sp.kx.http.HttpResponse
 import sp.kx.http.TLSEnvironment
+import sp.kx.http.TLSResponse
 import sp.kx.http.TLSRouting
 import sp.service.sample.provider.Loggers
 import java.security.KeyPair
@@ -49,15 +50,16 @@ internal class AppRouting(
     private fun onPostDouble(request: HttpRequest): HttpResponse {
         return map(
             request = request,
-            decode = { it.readInt() },
-            transform = {
-                check(it in 1..1024) { "Number \"$it\" error!" }
-                it * 2
-            },
-            encode = {
+            transform = { encoded ->
+                val number = encoded.readInt()
+                check(number in 1..1024) { "Number \"$number\" error!" }
                 val bytes = ByteArray(4)
-                bytes.write(value = it)
-                bytes
+                bytes.write(value = number * 2)
+                TLSResponse(
+                    code = 200,
+                    message = "OK",
+                    encoded = bytes,
+                )
             },
         )
     }
