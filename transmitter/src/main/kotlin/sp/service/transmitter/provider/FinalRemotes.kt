@@ -22,24 +22,22 @@ internal class FinalRemotes(
         .callTimeout(5, TimeUnit.SECONDS)
         .build()
 
-    private fun <REQ : Any, RES : Any> map(
+    private fun <T : Any> map(
         method: String,
         query: String,
-        decoded: REQ,
-        encode: (REQ) -> ByteArray,
-        decode: (ByteArray) -> RES,
-    ): RES {
+        encoded: ByteArray,
+        decode: (ByteArray) -> T,
+    ): T {
         logger.debug("method: \"$method\"") // todo
         val methodCode: Byte = TLSEnvironment.getMethodCode(method = method)
         logger.debug("query: \"$query\"") // todo
         val encodedQuery = query.toByteArray()
-        val requestEncoded = encode(decoded)
         val tlsTransmitter = TLSTransmitter.build(
             env = tlsEnv,
             keyPair = keyPair,
             methodCode = methodCode,
             encodedQuery = encodedQuery,
-            encoded = requestEncoded,
+            encoded = encoded,
         )
         return client.newCall(
             request = Request.Builder()
@@ -55,8 +53,10 @@ internal class FinalRemotes(
                         methodCode = methodCode,
                         encodedQuery = encodedQuery,
                         secretKey = tlsTransmitter.secretKey,
-                        body = response.body?.bytes() ?: error("No body!"),
                         requestID = tlsTransmitter.id,
+                        responseCode = response.code,
+                        message = response.message,
+                        body = response.body?.bytes() ?: error("No body!"),
                     )
                     decode(responseEncoded)
                 }
@@ -66,16 +66,13 @@ internal class FinalRemotes(
     }
 
     override fun double(number: Int): Int {
+        val bytes = ByteArray(4)
+        bytes.write(value = number)
         return map(
             method = "POST",
             query = "/double",
-            decoded = number,
-            encode = {
-                val bytes = ByteArray(4)
-                bytes.write(value = it)
-                bytes
-            },
-            decode = { it.readInt() }
+            encoded = bytes,
+            decode = { it.readInt() },
         )
     }
 }
