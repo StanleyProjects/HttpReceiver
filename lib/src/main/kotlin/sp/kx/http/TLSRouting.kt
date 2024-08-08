@@ -12,7 +12,7 @@ abstract class TLSRouting(
 
     internal fun onReceiver(receiver: TLSReceiver) {
         val timeNow = env.now()
-        if (timeNow < receiver.time) error("Time error!")
+//        if (timeNow < receiver.time) error("Time error!") // todo IEEE 1588 Precision Time Protocol
         if (timeNow - receiver.time > env.timeMax) error("Time is up!")
         val requested = this.requested
         if (requested.containsKey(receiver.id)) {

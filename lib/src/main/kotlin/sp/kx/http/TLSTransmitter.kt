@@ -92,7 +92,7 @@ class TLSTransmitter internal constructor(
             val encoded = ByteArray(payload.readInt())
             val time = payload.readLong(index = 4 + encoded.size).milliseconds
             val timeNow = env.now()
-            if (timeNow < time) error("Time error!")
+//            if (timeNow < time) error("Time error!") // todo IEEE 1588 Precision Time Protocol
             if (timeNow - time > env.timeMax) error("Time is up!")
             val signature = ByteArray(body.readInt(index = 4 + encrypted.size))
             System.arraycopy(body, 4 + encrypted.size + 4, signature, 0, signature.size)
