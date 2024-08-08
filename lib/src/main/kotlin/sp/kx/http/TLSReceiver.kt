@@ -5,8 +5,6 @@ import sp.kx.bytes.readLong
 import sp.kx.bytes.readUUID
 import sp.kx.bytes.toHEX
 import sp.kx.bytes.write
-import java.security.KeyPair
-import java.security.PrivateKey
 import java.util.Date
 import java.util.Objects
 import java.util.UUID
@@ -48,7 +46,6 @@ internal class TLSReceiver(
     companion object {
         fun build(
             env: TLSEnvironment,
-            keyPair: KeyPair,
             methodCode: Byte,
             encodedQuery: ByteArray,
             body: ByteArray,
@@ -59,6 +56,7 @@ internal class TLSReceiver(
             System.arraycopy(body, 4 + encryptedSK.size + 4, encrypted, 0, encrypted.size)
             val signature = ByteArray(body.readInt(index = 4 + encryptedSK.size + 4 + encrypted.size))
             System.arraycopy(body, 4 + encryptedSK.size + 4 + encrypted.size + 4, signature, 0, signature.size)
+            val keyPair = env.getKeyPair()
             val secretKey = env.toSecretKey(env.decrypt(keyPair.private, encryptedSK))
             val payload = env.decrypt(secretKey, encrypted)
             val signatureData = ByteArray(payload.size + 1 + encodedQuery.size + secretKey.encoded.size)
@@ -82,7 +80,6 @@ internal class TLSReceiver(
 
         fun toHttpResponse(
             env: TLSEnvironment,
-            privateKey: PrivateKey,
             secretKey: SecretKey,
             methodCode: Byte,
             encodedQuery: ByteArray,
@@ -105,7 +102,8 @@ internal class TLSReceiver(
             System.arraycopy(encodedQuery, 0, signatureData, payload.size + 16 + 1, encodedQuery.size)
             signatureData.write(index = payload.size + 16 + 1 + encodedQuery.size, value = tlsResponse.code)
             System.arraycopy(encodedMessage, 0, signatureData, payload.size + 16 + 1 + encodedQuery.size + 4, encodedMessage.size)
-            val signature = env.sign(privateKey, signatureData)
+            val keyPair = env.getKeyPair()
+            val signature = env.sign(keyPair.private, signatureData)
             val body = ByteArray(4 + encrypted.size + 4 + signature.size)
             body.write(value = encrypted.size)
             System.arraycopy(encrypted, 0, body, 4, encrypted.size)
