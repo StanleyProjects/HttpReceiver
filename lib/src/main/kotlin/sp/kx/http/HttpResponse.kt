@@ -42,7 +42,7 @@ class HttpResponse(
 
     override fun toString(): String {
         val builder = StringBuilder("{")
-        if (version.isBlank()) {
+        if (version.isEmpty()) {
             builder.append("code: $code")
         } else {
             builder
@@ -50,7 +50,7 @@ class HttpResponse(
                 .append(", ")
                 .append("code: $code")
         }
-        if (message.isNotBlank()) {
+        if (message.isNotEmpty()) {
             builder
                 .append(", ")
                 .append("message: \"$message\"")

@@ -89,10 +89,13 @@ internal class TLSReceiver(
             requestID: UUID,
             tlsResponse: TLSResponse,
         ): HttpResponse {
-            val payload = ByteArray(4 + tlsResponse.encoded.size + 8)
-            payload.write(value = tlsResponse.encoded.size)
-            System.arraycopy(tlsResponse.encoded, 0, payload, 4, tlsResponse.encoded.size)
-            payload.write(index = 4 + tlsResponse.encoded.size, env.now().inWholeMilliseconds)
+            val encodedSize = tlsResponse.encoded?.size ?: 0
+            val payload = ByteArray(4 + encodedSize + 8)
+            payload.write(value = encodedSize)
+            if (tlsResponse.encoded != null && encodedSize > 0) {
+                System.arraycopy(tlsResponse.encoded, 0, payload, 4, encodedSize)
+            }
+            payload.write(index = 4 + encodedSize, env.now().inWholeMilliseconds)
             val encrypted = env.encrypt(secretKey, payload)
             val encodedMessage = tlsResponse.message.toByteArray()
             val signatureData = ByteArray(payload.size + 16 + 1 + encodedQuery.size + 4 + encodedMessage.size)
