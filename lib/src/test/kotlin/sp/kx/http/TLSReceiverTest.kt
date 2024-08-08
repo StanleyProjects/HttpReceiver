@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import sp.kx.bytes.toHEX
 import java.util.Date
 import java.util.Objects
 import kotlin.time.Duration.Companion.milliseconds
@@ -130,8 +129,8 @@ internal class TLSReceiverTest {
             ),
         )
         val body = toByteArray(encryptedSK.size) + encryptedSK +
-                toByteArray(encrypted.size) + encrypted +
-                toByteArray(signature.size) + signature
+            toByteArray(encrypted.size) + encrypted +
+            toByteArray(signature.size) + signature
         val actual = TLSReceiver.build(
             env = env,
             keyPair = keyPair,
@@ -182,8 +181,8 @@ internal class TLSReceiverTest {
             ),
         )
         val body = toByteArray(encryptedSK.size) + encryptedSK +
-                toByteArray(encrypted.size) + encrypted +
-                toByteArray(signatureWrong.size) + signatureWrong
+            toByteArray(encrypted.size) + encrypted +
+            toByteArray(signatureWrong.size) + signatureWrong
         val expected = "Not verified!"
         val throwable: Throwable = assertThrows(IllegalStateException::class.java) {
             TLSReceiver.build(

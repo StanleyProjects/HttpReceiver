@@ -3,7 +3,6 @@ package sp.kx.http
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
-import java.util.UUID
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
@@ -156,7 +155,7 @@ internal class TLSRoutingTest {
         )
         val routing = MockTLSRouting(
             env = env,
-            requested = mapOf(id to Duration.ZERO)
+            requested = mapOf(id to Duration.ZERO),
         )
         val receiver = mockTLSReceiver(
             id = id,

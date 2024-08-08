@@ -8,7 +8,6 @@ import java.security.KeyPair
 import java.util.Objects
 import java.util.UUID
 import javax.crypto.SecretKey
-import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
 class TLSTransmitter internal constructor(

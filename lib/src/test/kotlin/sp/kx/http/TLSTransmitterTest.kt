@@ -3,8 +3,8 @@ package sp.kx.http
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotEquals
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import sp.kx.bytes.toHEX
 import java.util.Objects
@@ -119,8 +119,8 @@ internal class TLSTransmitterTest {
             encoded = encoded,
         )
         val body = toByteArray(encryptedSK.size) + encryptedSK +
-                toByteArray(encrypted.size) + encrypted +
-                toByteArray(signature.size) + signature
+            toByteArray(encrypted.size) + encrypted +
+            toByteArray(signature.size) + signature
         val expected = mockTLSTransmitter(
             secretKey = secretKey,
             id = id,
