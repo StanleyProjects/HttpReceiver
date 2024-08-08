@@ -115,6 +115,7 @@ internal class TLSReceiverTest {
             publicKey = MockPublicKey(mockByteArray(23)),
         )
         val env = MockTLSEnvironment(
+            keyPair = keyPair,
             timeProvider = { time },
             newSecretKeyProvider = { secretKey },
             items = listOf(
@@ -133,7 +134,6 @@ internal class TLSReceiverTest {
             toByteArray(signature.size) + signature
         val actual = TLSReceiver.build(
             env = env,
-            keyPair = keyPair,
             methodCode = methodCode,
             encodedQuery = encodedQuery,
             body = body,
@@ -167,6 +167,7 @@ internal class TLSReceiverTest {
             publicKey = MockPublicKey(mockByteArray(22)),
         )
         val env = MockTLSEnvironment(
+            keyPair = keyPair,
             timeProvider = { time },
             newSecretKeyProvider = { secretKey },
             items = listOf(
@@ -187,7 +188,6 @@ internal class TLSReceiverTest {
         val throwable: Throwable = assertThrows(IllegalStateException::class.java) {
             TLSReceiver.build(
                 env = env,
-                keyPair = keyPair,
                 methodCode = methodCode,
                 encodedQuery = encodedQuery,
                 body = body,
@@ -215,6 +215,7 @@ internal class TLSReceiverTest {
         val signatureData = payload + toByteArray(requestID) + methodCode + encodedQuery + toByteArray(responseCode) + messageEncoded
         val signature = mockByteArray(18)
         val env = MockTLSEnvironment(
+            keyPair = keyPair,
             timeProvider = { time },
             items = listOf(
                 Triple(secretKey.encoded, payload, encrypted),
@@ -237,7 +238,6 @@ internal class TLSReceiverTest {
         )
         val actual = TLSReceiver.toHttpResponse(
             env = env,
-            privateKey = keyPair.private,
             secretKey = secretKey,
             methodCode = methodCode,
             encodedQuery = encodedQuery,

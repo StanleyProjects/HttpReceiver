@@ -1,9 +1,11 @@
 package sp.service.sample
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import sp.kx.bytes.readInt
 import sp.kx.bytes.write
 import sp.kx.http.HttpRequest
@@ -12,14 +14,12 @@ import sp.kx.http.TLSEnvironment
 import sp.kx.http.TLSResponse
 import sp.kx.http.TLSRouting
 import sp.service.sample.provider.Loggers
-import java.security.KeyPair
 import java.util.UUID
 import kotlin.time.Duration
 
 internal class AppRouting(
     loggers: Loggers,
     tlsEnv: TLSEnvironment,
-    override val keyPair: KeyPair,
     override var requested: Map<UUID, Duration>,
     private val coroutineScope: CoroutineScope,
 ) : TLSRouting(tlsEnv) {
@@ -42,7 +42,9 @@ internal class AppRouting(
 
     private fun onGetQuit(request: HttpRequest): HttpResponse {
         coroutineScope.launch {
-            _events.emit(Event.Quit)
+            withContext(Dispatchers.Default) {
+                _events.emit(Event.Quit)
+            }
         }
         return HttpResponse.OK()
     }

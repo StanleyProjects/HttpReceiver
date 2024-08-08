@@ -107,22 +107,6 @@ internal class TLSRoutingTest {
     }
 
     @Test
-    fun onReceiverTimeErrorTest() {
-        val time = 12.milliseconds
-        val timeNow = time - 1.seconds
-        check(timeNow < time)
-        val env = MockTLSEnvironment(
-            timeProvider = { timeNow },
-        )
-        val routing = MockTLSRouting(env = env)
-        val receiver = mockTLSReceiver(time = time)
-        val throwable: IllegalStateException = assertThrows(IllegalStateException::class.java) {
-            routing.onReceiver(receiver)
-        }
-        assertEquals("Time error!", throwable.message)
-    }
-
-    @Test
     fun onReceiverTimeIsUpTest() {
         val time = 12.milliseconds
         val timeMax = 1.minutes
@@ -196,6 +180,7 @@ internal class TLSRoutingTest {
         val responseSignatureData = responsePayload + toByteArray(id) + methodCode + encodedQuery + toByteArray(responseCode) + messageEncoded
         val responseSignature = mockByteArray(18)
         val env = MockTLSEnvironment(
+            keyPair = keyPair,
             timeProvider = { time },
             newSecretKeyProvider = { secretKey },
             items = listOf(
@@ -214,10 +199,7 @@ internal class TLSRoutingTest {
         val requestBody = toByteArray(encryptedSK.size) + encryptedSK +
             toByteArray(requestEncrypted.size) + requestEncrypted +
             toByteArray(requestSignature.size) + requestSignature
-        val routing = MockTLSRouting(
-            keyPair = keyPair,
-            env = env,
-        )
+        val routing = MockTLSRouting(env = env)
         val responseBody = toByteArray(responseEncrypted.size) + responseEncrypted + toByteArray(responseSignature.size) + responseSignature
         val expected = mockHttpResponse(
             version = "1.1",

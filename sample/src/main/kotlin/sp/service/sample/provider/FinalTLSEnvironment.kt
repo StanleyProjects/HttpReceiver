@@ -1,6 +1,7 @@
 package sp.service.sample.provider
 
 import sp.kx.http.TLSEnvironment
+import java.security.KeyPair
 import java.security.PrivateKey
 import java.security.PublicKey
 import java.security.Signature
@@ -12,7 +13,10 @@ import javax.crypto.spec.SecretKeySpec
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
-internal class FinalTLSEnvironment(override val timeMax: Duration) : TLSEnvironment {
+internal class FinalTLSEnvironment(
+    override val timeMax: Duration,
+    override val keyPair: KeyPair,
+) : TLSEnvironment {
     override fun now(): Duration {
         return System.currentTimeMillis().milliseconds
     }

@@ -1,18 +1,16 @@
 package sp.kx.http
 
-import java.security.KeyPair
 import java.util.UUID
 import kotlin.time.Duration
 
 abstract class TLSRouting(
     private val env: TLSEnvironment,
 ) : HttpRouting {
-    protected abstract val keyPair: KeyPair
     protected abstract var requested: Map<UUID, Duration>
 
     internal fun onReceiver(receiver: TLSReceiver) {
         val timeNow = env.now()
-        if (timeNow < receiver.time) error("Time error!")
+//        if (timeNow < receiver.time) error("Time error!") // todo IEEE 1588 Precision Time Protocol
         if (timeNow - receiver.time > env.timeMax) error("Time is up!")
         val requested = this.requested
         if (requested.containsKey(receiver.id)) {
@@ -33,7 +31,6 @@ abstract class TLSRouting(
             val encodedQuery = request.query.toByteArray()
             val tlsReceiver = TLSReceiver.build(
                 env = env,
-                keyPair = keyPair,
                 methodCode = methodCode,
                 encodedQuery = encodedQuery,
                 body = body,
@@ -43,7 +40,6 @@ abstract class TLSRouting(
             TLSReceiver.toHttpResponse(
                 env = env,
                 secretKey = tlsReceiver.secretKey,
-                privateKey = keyPair.private,
                 methodCode = methodCode,
                 encodedQuery = encodedQuery,
                 requestID = tlsReceiver.id,

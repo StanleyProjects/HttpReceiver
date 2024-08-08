@@ -14,7 +14,6 @@ import java.util.concurrent.TimeUnit
 internal class FinalRemotes(
     loggers: Loggers,
     private val tlsEnv: TLSEnvironment,
-    private val keyPair: KeyPair,
     private val address: URL,
 ) : Remotes {
     private val logger = loggers.create("[Remotes]")
@@ -34,7 +33,6 @@ internal class FinalRemotes(
         val encodedQuery = query.toByteArray()
         val tlsTransmitter = TLSTransmitter.build(
             env = tlsEnv,
-            keyPair = keyPair,
             methodCode = methodCode,
             encodedQuery = encodedQuery,
             encoded = encoded,
@@ -49,7 +47,6 @@ internal class FinalRemotes(
                 200 -> {
                     val responseEncoded = TLSTransmitter.fromResponse(
                         env = tlsEnv,
-                        keyPair = keyPair,
                         methodCode = methodCode,
                         encodedQuery = encodedQuery,
                         secretKey = tlsTransmitter.secretKey,

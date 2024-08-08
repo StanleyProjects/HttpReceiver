@@ -1,5 +1,6 @@
 package sp.kx.http
 
+import java.security.KeyPair
 import java.security.PrivateKey
 import java.security.PublicKey
 import java.util.UUID
@@ -9,6 +10,7 @@ import kotlin.time.Duration
 interface TLSEnvironment {
     fun now(): Duration
     val timeMax: Duration
+    val keyPair: KeyPair
     fun newUUID(): UUID
     fun newSecretKey(): SecretKey
     fun toSecretKey(encoded: ByteArray): SecretKey
