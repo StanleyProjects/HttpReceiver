@@ -25,9 +25,7 @@ abstract class TLSRouting(
 
     protected fun <REQ : Any, RES : Any> map(
         request: HttpRequest,
-        decode: (ByteArray) -> REQ,
-        transform: (REQ) -> RES,
-        encode: (RES) -> ByteArray,
+        transform: (ByteArray) -> TLSResponse,
     ): HttpResponse {
         return runCatching {
             val body = request.body ?: error("No body!")
@@ -41,21 +39,18 @@ abstract class TLSRouting(
                 body = body,
             )
             onReceiver(tlsReceiver)
-            val decoded = decode(tlsReceiver.encoded)
-//            println("decoded: $decoded") // todo
-            TLSReceiver.toResponseBody(
+            val tlsResponse = transform(tlsReceiver.encoded)
+            TLSReceiver.toHttpResponse(
                 env = env,
                 secretKey = tlsReceiver.secretKey,
                 privateKey = keyPair.private,
                 methodCode = methodCode,
                 encodedQuery = encodedQuery,
                 requestID = tlsReceiver.id,
-                encoded = encode(transform(decoded)),
+                tlsResponse = tlsResponse,
             )
-        }.map { body ->
-            HttpResponse.OK(body = body)
         }.getOrElse { error ->
-            error("error: $error") // todo
+//            error("error: $error") // todo
             HttpResponse.InternalServerError(body = "todo".toByteArray())
         }
     }

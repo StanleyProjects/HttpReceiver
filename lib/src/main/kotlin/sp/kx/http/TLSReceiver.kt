@@ -80,32 +80,42 @@ internal class TLSReceiver(
             )
         }
 
-        fun toResponseBody(
+        fun toHttpResponse(
             env: TLSEnvironment,
             privateKey: PrivateKey,
             secretKey: SecretKey,
             methodCode: Byte,
             encodedQuery: ByteArray,
             requestID: UUID,
-            encoded: ByteArray,
-        ): ByteArray {
-            val payload = ByteArray(4 + encoded.size + 8)
-            payload.write(value = encoded.size)
-            System.arraycopy(encoded, 0, payload, 4, encoded.size)
-            payload.write(index = 4 + encoded.size, env.now().inWholeMilliseconds)
+            tlsResponse: TLSResponse,
+        ): HttpResponse {
+            val payload = ByteArray(4 + tlsResponse.encoded.size + 8)
+            payload.write(value = tlsResponse.encoded.size)
+            System.arraycopy(tlsResponse.encoded, 0, payload, 4, tlsResponse.encoded.size)
+            payload.write(index = 4 + tlsResponse.encoded.size, env.now().inWholeMilliseconds)
             val encrypted = env.encrypt(secretKey, payload)
-            val signatureData = ByteArray(payload.size + 16 + 1 + encodedQuery.size)
+            val encodedMessage = tlsResponse.message.toByteArray()
+            val signatureData = ByteArray(payload.size + 16 + 1 + encodedQuery.size + 4 + 4 + encodedMessage.size)
             System.arraycopy(payload, 0, signatureData, 0, payload.size)
             signatureData.write(index = payload.size, requestID)
             signatureData[payload.size + 16] = methodCode
             System.arraycopy(encodedQuery, 0, signatureData, payload.size + 16 + 1, encodedQuery.size)
+            signatureData.write(index = payload.size + 16 + 1 + encodedQuery.size, value = tlsResponse.code)
+            signatureData.write(index = payload.size + 16 + 1 + encodedQuery.size + 4, value = encodedMessage.size)
+            System.arraycopy(encodedMessage, 0, signatureData, payload.size + 16 + 1 + encodedQuery.size + 4 + 4, encodedMessage.size)
             val signature = env.sign(privateKey, signatureData)
             val body = ByteArray(4 + encrypted.size + 4 + signature.size)
             body.write(value = encrypted.size)
             System.arraycopy(encrypted, 0, body, 4, encrypted.size)
             body.write(index = 4 + encrypted.size, signature.size)
             System.arraycopy(signature, 0, body, 4 + encrypted.size + 4, signature.size)
-            return body
+            return HttpResponse(
+                version = "1.1",
+                code = tlsResponse.code,
+                message = tlsResponse.message,
+                headers = emptyMap(),
+                body = body,
+            )
         }
     }
 }
