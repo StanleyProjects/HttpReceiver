@@ -83,6 +83,8 @@ class TLSTransmitter internal constructor(
             encodedQuery: ByteArray,
             secretKey: SecretKey,
             requestID: UUID,
+            responseCode: Int,
+            message: String,
             body: ByteArray,
         ): ByteArray {
             val encrypted = ByteArray(body.readInt())
@@ -95,11 +97,14 @@ class TLSTransmitter internal constructor(
             if (timeNow - time > env.timeMax) error("Time is up!")
             val signature = ByteArray(body.readInt(index = 4 + encrypted.size))
             System.arraycopy(body, 4 + encrypted.size + 4, signature, 0, signature.size)
-            val signatureData = ByteArray(payload.size + 16 + 1 + encodedQuery.size)
+            val messageEncoded = message.toByteArray()
+            val signatureData = ByteArray(payload.size + 16 + 1 + encodedQuery.size + 4 + messageEncoded.size)
             System.arraycopy(payload, 0, signatureData, 0, payload.size)
             signatureData.write(index = payload.size, requestID)
             signatureData[payload.size + 16] = methodCode
             System.arraycopy(encodedQuery, 0, signatureData, payload.size + 16 + 1, encodedQuery.size)
+            signatureData.write(index = payload.size + 16 + 1 + encodedQuery.size, responseCode)
+            System.arraycopy(messageEncoded, 0, signatureData, payload.size + 16 + 1 + encodedQuery.size + 4, messageEncoded.size)
             val verified = env.verify(keyPair.public, signatureData, signature)
             if (!verified) error("Signature is invalid!")
             System.arraycopy(payload, 4, encoded, 0, encoded.size)

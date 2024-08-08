@@ -36,7 +36,7 @@ fun main() {
         loggers = loggers,
         tlsEnv = FinalTLSEnvironment(
             secrets = secrets,
-            maxTime = 1.minutes,
+            timeMax = 1.minutes,
         ),
         keyPair = keyPair,
         address = URL("http://192.168.88.222:40631"),

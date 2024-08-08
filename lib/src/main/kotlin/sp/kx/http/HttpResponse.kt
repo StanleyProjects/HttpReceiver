@@ -71,9 +71,12 @@ class HttpResponse(
     override fun equals(other: Any?): Boolean {
         return when (other) {
             is HttpResponse -> {
-                val equals = body == null && other.body == null || body != null && other.body != null && body.contentEquals(other.body)
-                if (!equals) return false
-                return other.version == version && other.code == code && other.message == message && other.headers == headers
+                val equals = when {
+                    body == null -> other.body == null
+                    other.body == null -> false
+                    else -> body.contentEquals(other.body)
+                }
+                return equals && other.version == version && other.code == code && other.message == message && other.headers == headers
             }
             else -> false
         }
