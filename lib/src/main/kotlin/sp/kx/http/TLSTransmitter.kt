@@ -51,7 +51,7 @@ class TLSTransmitter internal constructor(
             val id = env.newUUID()
             payload.write(index = 4 + encoded.size + 8, id)
             val secretKey = env.newSecretKey()
-            val keyPair = env.getKeyPair()
+            val keyPair = env.keyPair
             val encryptedSK = env.encrypt(keyPair.public, secretKey.encoded)
             val encrypted = env.encrypt(secretKey, payload)
             val signatureData = ByteArray(payload.size + 1 + encodedQuery.size + secretKey.encoded.size)
@@ -102,8 +102,7 @@ class TLSTransmitter internal constructor(
             System.arraycopy(encodedQuery, 0, signatureData, payload.size + 16 + 1, encodedQuery.size)
             signatureData.write(index = payload.size + 16 + 1 + encodedQuery.size, responseCode)
             System.arraycopy(messageEncoded, 0, signatureData, payload.size + 16 + 1 + encodedQuery.size + 4, messageEncoded.size)
-            val keyPair = env.getKeyPair()
-            val verified = env.verify(keyPair.public, signatureData, signature)
+            val verified = env.verify(env.keyPair.public, signatureData, signature)
             if (!verified) error("Signature is invalid!")
             System.arraycopy(payload, 4, encoded, 0, encoded.size)
             return encoded

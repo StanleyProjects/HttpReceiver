@@ -41,8 +41,10 @@ fun main() {
         coroutineScope.launch {
             val routing = AppRouting(
                 loggers = loggers,
-                tlsEnv = FinalTLSEnvironment(timeMax = 1.minutes),
-                keyPair = keyPair,
+                tlsEnv = FinalTLSEnvironment(
+                    timeMax = 1.minutes,
+                    keyPair = keyPair,
+                ),
                 requested = mutableMapOf(),
                 coroutineScope = coroutineScope,
             )

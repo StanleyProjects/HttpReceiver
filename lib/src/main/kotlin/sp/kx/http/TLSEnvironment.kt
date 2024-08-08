@@ -10,7 +10,7 @@ import kotlin.time.Duration
 interface TLSEnvironment {
     fun now(): Duration
     val timeMax: Duration
-    fun getKeyPair(): KeyPair
+    val keyPair: KeyPair
     fun newUUID(): UUID
     fun newSecretKey(): SecretKey
     fun toSecretKey(encoded: ByteArray): SecretKey

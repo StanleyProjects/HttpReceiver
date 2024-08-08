@@ -12,14 +12,12 @@ import sp.kx.http.TLSEnvironment
 import sp.kx.http.TLSResponse
 import sp.kx.http.TLSRouting
 import sp.service.sample.provider.Loggers
-import java.security.KeyPair
 import java.util.UUID
 import kotlin.time.Duration
 
 internal class AppRouting(
     loggers: Loggers,
     tlsEnv: TLSEnvironment,
-    override val keyPair: KeyPair,
     override var requested: Map<UUID, Duration>,
     private val coroutineScope: CoroutineScope,
 ) : TLSRouting(tlsEnv) {

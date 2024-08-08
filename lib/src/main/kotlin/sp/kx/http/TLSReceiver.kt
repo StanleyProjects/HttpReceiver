@@ -56,7 +56,7 @@ internal class TLSReceiver(
             System.arraycopy(body, 4 + encryptedSK.size + 4, encrypted, 0, encrypted.size)
             val signature = ByteArray(body.readInt(index = 4 + encryptedSK.size + 4 + encrypted.size))
             System.arraycopy(body, 4 + encryptedSK.size + 4 + encrypted.size + 4, signature, 0, signature.size)
-            val keyPair = env.getKeyPair()
+            val keyPair = env.keyPair
             val secretKey = env.toSecretKey(env.decrypt(keyPair.private, encryptedSK))
             val payload = env.decrypt(secretKey, encrypted)
             val signatureData = ByteArray(payload.size + 1 + encodedQuery.size + secretKey.encoded.size)
@@ -102,7 +102,7 @@ internal class TLSReceiver(
             System.arraycopy(encodedQuery, 0, signatureData, payload.size + 16 + 1, encodedQuery.size)
             signatureData.write(index = payload.size + 16 + 1 + encodedQuery.size, value = tlsResponse.code)
             System.arraycopy(encodedMessage, 0, signatureData, payload.size + 16 + 1 + encodedQuery.size + 4, encodedMessage.size)
-            val keyPair = env.getKeyPair()
+            val keyPair = env.keyPair
             val signature = env.sign(keyPair.private, signatureData)
             val body = ByteArray(4 + encrypted.size + 4 + signature.size)
             body.write(value = encrypted.size)
