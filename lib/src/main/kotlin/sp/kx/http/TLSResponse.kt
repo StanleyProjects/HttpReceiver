@@ -41,4 +41,36 @@ class TLSResponse(
             encoded?.contentHashCode() ?: 0,
         )
     }
+
+    companion object {
+        fun OK(
+            encoded: ByteArray? = null,
+        ): TLSResponse {
+            return TLSResponse(
+                code = 200,
+                message = "OK",
+                encoded = encoded,
+            )
+        }
+
+        fun NotModified(
+            encoded: ByteArray? = null,
+        ): TLSResponse {
+            return TLSResponse(
+                code = 304,
+                message = "Not Modified",
+                encoded = encoded,
+            )
+        }
+
+        fun NotFound(
+            encoded: ByteArray? = null,
+        ): TLSResponse {
+            return TLSResponse(
+                code = 404,
+                message = "Not Found",
+                encoded = encoded,
+            )
+        }
+    }
 }
