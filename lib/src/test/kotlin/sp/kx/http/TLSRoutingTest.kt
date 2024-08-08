@@ -191,7 +191,10 @@ internal class TLSRoutingTest {
         val responseEncoded = mockByteArray(12)
         val responsePayload = toByteArray(responseEncoded.size) + responseEncoded + toByteArray(time.inWholeMilliseconds)
         val responseEncrypted = mockByteArray(13)
-        val responseSignatureData = responsePayload + toByteArray(id) + methodCode + encodedQuery
+        val responseCode = 200
+        val message = "OK"
+        val messageEncoded = message.toByteArray()
+        val responseSignatureData = responsePayload + toByteArray(id) + methodCode + encodedQuery + toByteArray(responseCode) + messageEncoded
         val responseSignature = mockByteArray(18)
         val env = MockTLSEnvironment(
             timeProvider = { time },
@@ -219,8 +222,8 @@ internal class TLSRoutingTest {
         val responseBody = toByteArray(responseEncrypted.size) + responseEncrypted + toByteArray(responseSignature.size) + responseSignature
         val expected = mockHttpResponse(
             version = "1.1",
-            code = 200,
-            message = "OK",
+            code = responseCode,
+            message = message,
             headers = emptyMap(),
             body = responseBody,
         )
@@ -233,6 +236,8 @@ internal class TLSRoutingTest {
             transform = { bytes ->
                 check(bytes.contentEquals(requestEncoded))
                 mockTLSResponse(
+                    code = responseCode,
+                    message = message,
                     encoded = responseEncoded,
                 )
             },

@@ -210,7 +210,10 @@ internal class TLSReceiverTest {
         val methodCode: Byte = 15
         val encodedQuery = mockByteArray(16)
         val requestID = mockUUID(17)
-        val signatureData = payload + toByteArray(requestID) + methodCode + encodedQuery
+        val responseCode = 171
+        val message = "response message foo bar"
+        val messageEncoded = message.toByteArray()
+        val signatureData = payload + toByteArray(requestID) + methodCode + encodedQuery + toByteArray(responseCode) + messageEncoded
         val signature = mockByteArray(18)
         val env = MockTLSEnvironment(
             timeProvider = { time },
@@ -221,8 +224,17 @@ internal class TLSReceiverTest {
                 keyPair to (signatureData to signature),
             ),
         )
-        val tlsResponse = mockTLSResponse()
-        val expected = mockHttpResponse()
+        val tlsResponse = mockTLSResponse(
+            code = responseCode,
+            message = message,
+        )
+        val body = toByteArray(encrypted.size) + encrypted + toByteArray(signature.size) + signature
+        val expected = mockHttpResponse(
+            version = "1.1",
+            code = responseCode,
+            message = message,
+            body = body,
+        )
         val actual = TLSReceiver.toHttpResponse(
             env = env,
             privateKey = keyPair.private,

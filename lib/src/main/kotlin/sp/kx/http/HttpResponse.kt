@@ -41,13 +41,31 @@ class HttpResponse(
     }
 
     override fun toString(): String {
-        return "{" +
-            "version: $version, " +
-            "code: $code, " +
-            "message: $message, " +
-            "headers: $headers, " +
-            "body: ${body?.toHEX()}" +
-            "}"
+        val builder = StringBuilder("{")
+        if (version.isBlank()) {
+            builder.append("code: $code")
+        } else {
+            builder
+                .append("version: \"$version\"")
+                .append(", ")
+                .append("code: $code")
+        }
+        if (message.isNotBlank()) {
+            builder
+                .append(", ")
+                .append("message: \"$message\"")
+        }
+        if (headers.isNotEmpty()) {
+            builder
+                .append(", ")
+                .append("headers: $headers")
+        }
+        if (body != null && body.isNotEmpty()) {
+            builder
+                .append(", ")
+                .append("body: \"${body.toHEX()}\"")
+        }
+        return builder.append("}").toString()
     }
 
     override fun equals(other: Any?): Boolean {
