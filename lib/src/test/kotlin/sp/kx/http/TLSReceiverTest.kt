@@ -115,6 +115,7 @@ internal class TLSReceiverTest {
             publicKey = MockPublicKey(mockByteArray(23)),
         )
         val env = MockTLSEnvironment(
+            keyPair = keyPair,
             timeProvider = { time },
             newSecretKeyProvider = { secretKey },
             items = listOf(
@@ -166,6 +167,7 @@ internal class TLSReceiverTest {
             publicKey = MockPublicKey(mockByteArray(22)),
         )
         val env = MockTLSEnvironment(
+            keyPair = keyPair,
             timeProvider = { time },
             newSecretKeyProvider = { secretKey },
             items = listOf(
@@ -213,6 +215,7 @@ internal class TLSReceiverTest {
         val signatureData = payload + toByteArray(requestID) + methodCode + encodedQuery + toByteArray(responseCode) + messageEncoded
         val signature = mockByteArray(18)
         val env = MockTLSEnvironment(
+            keyPair = keyPair,
             timeProvider = { time },
             items = listOf(
                 Triple(secretKey.encoded, payload, encrypted),
