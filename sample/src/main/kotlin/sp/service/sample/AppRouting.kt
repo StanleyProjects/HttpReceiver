@@ -55,11 +55,7 @@ internal class AppRouting(
                 check(number in 1..1024) { "Number \"$number\" error!" }
                 val bytes = ByteArray(4)
                 bytes.write(value = number * 2)
-                TLSResponse(
-                    code = 200,
-                    message = "OK",
-                    encoded = bytes,
-                )
+                TLSResponse.OK(encoded = bytes)
             },
         )
     }
