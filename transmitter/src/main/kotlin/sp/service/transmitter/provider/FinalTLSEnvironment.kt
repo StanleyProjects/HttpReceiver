@@ -12,6 +12,7 @@ import kotlin.time.Duration.Companion.milliseconds
 internal class FinalTLSEnvironment(
     private val secrets: Secrets,
     override val timeMax: Duration,
+    override val keyPair: KeyPair,
 ) : TLSEnvironment {
     override fun now(): Duration {
         return System.currentTimeMillis().milliseconds
