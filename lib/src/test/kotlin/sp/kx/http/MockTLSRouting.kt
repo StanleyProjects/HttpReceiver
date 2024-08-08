@@ -1,11 +1,9 @@
 package sp.kx.http
 
-import java.security.KeyPair
 import java.util.UUID
 import kotlin.time.Duration
 
 internal class MockTLSRouting(
-    override val keyPair: KeyPair = mockKeyPair(),
     override var requested: Map<UUID, Duration> = emptyMap(),
     private val mapping: Map<String, Map<String, (HttpRequest) -> HttpResponse>> = emptyMap(),
     env: TLSEnvironment = MockTLSEnvironment(),

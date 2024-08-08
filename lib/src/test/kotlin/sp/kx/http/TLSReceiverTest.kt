@@ -133,7 +133,6 @@ internal class TLSReceiverTest {
             toByteArray(signature.size) + signature
         val actual = TLSReceiver.build(
             env = env,
-            keyPair = keyPair,
             methodCode = methodCode,
             encodedQuery = encodedQuery,
             body = body,
@@ -187,7 +186,6 @@ internal class TLSReceiverTest {
         val throwable: Throwable = assertThrows(IllegalStateException::class.java) {
             TLSReceiver.build(
                 env = env,
-                keyPair = keyPair,
                 methodCode = methodCode,
                 encodedQuery = encodedQuery,
                 body = body,
@@ -237,7 +235,6 @@ internal class TLSReceiverTest {
         )
         val actual = TLSReceiver.toHttpResponse(
             env = env,
-            privateKey = keyPair.private,
             secretKey = secretKey,
             methodCode = methodCode,
             encodedQuery = encodedQuery,

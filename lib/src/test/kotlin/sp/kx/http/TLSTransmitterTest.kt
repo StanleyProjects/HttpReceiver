@@ -100,6 +100,7 @@ internal class TLSTransmitterTest {
         val signatureData = payload + methodCode + encodedQuery + secretKey.encoded
         val signature = mockByteArray(23)
         val env = MockTLSEnvironment(
+            keyPair = keyPair,
             timeProvider = { time },
             newSecretKeyProvider = { secretKey },
             newUUIDProvider = { id },
@@ -113,7 +114,6 @@ internal class TLSTransmitterTest {
         )
         val actual = TLSTransmitter.build(
             env = env,
-            keyPair = keyPair,
             methodCode = methodCode,
             encodedQuery = encodedQuery,
             encoded = encoded,
@@ -152,8 +152,9 @@ internal class TLSTransmitterTest {
         val signatureData = payload + toByteArray(id) + methodCode + encodedQuery + toByteArray(responseCode) + message.toByteArray()
         val signature = mockByteArray(22)
         val env = MockTLSEnvironment(
-            timeProvider = { timeNow },
             timeMax = timeMax,
+            keyPair = keyPair,
+            timeProvider = { timeNow },
             items = listOf(
                 Triple(secretKey.encoded, payload, encrypted),
             ),
@@ -164,7 +165,6 @@ internal class TLSTransmitterTest {
         val body = toByteArray(encrypted.size) + encrypted + toByteArray(signature.size) + signature
         val actual = TLSTransmitter.fromResponse(
             env = env,
-            keyPair = keyPair,
             methodCode = methodCode,
             encodedQuery = encodedQuery,
             secretKey = secretKey,
@@ -174,39 +174,6 @@ internal class TLSTransmitterTest {
             body = body,
         )
         assertTrue(encoded.contentEquals(actual), "expected: ${encoded.toHEX()}, actual: ${actual.toHEX()}")
-    }
-
-    @Test
-    fun fromResponseTimeErrorTest() {
-        val time = 12.milliseconds
-        val timeNow = time - 1.seconds
-        check(timeNow < time)
-        val secretKey = MockSecretKey(encoded = mockByteArray(16))
-        val encoded = mockByteArray(19)
-        val payload = toByteArray(encoded.size) + encoded + toByteArray(time.inWholeMilliseconds)
-        val encrypted = mockByteArray(21)
-        val signature = mockByteArray(22)
-        val env = MockTLSEnvironment(
-            timeProvider = { timeNow },
-            items = listOf(
-                Triple(secretKey.encoded, payload, encrypted),
-            ),
-        )
-        val body = toByteArray(encrypted.size) + encrypted + toByteArray(signature.size) + signature
-        val throwable: IllegalStateException = assertThrows(IllegalStateException::class.java) {
-            TLSTransmitter.fromResponse(
-                env = env,
-                keyPair = mockKeyPair(),
-                methodCode = 17,
-                encodedQuery = mockByteArray(18),
-                secretKey = secretKey,
-                requestID = mockUUID(),
-                responseCode = -1,
-                message = "",
-                body = body,
-            )
-        }
-        assertEquals("Time error!", throwable.message)
     }
 
     @Test
@@ -232,7 +199,6 @@ internal class TLSTransmitterTest {
         val throwable: IllegalStateException = assertThrows(IllegalStateException::class.java) {
             TLSTransmitter.fromResponse(
                 env = env,
-                keyPair = mockKeyPair(),
                 methodCode = 17,
                 encodedQuery = mockByteArray(18),
                 secretKey = secretKey,
@@ -270,8 +236,9 @@ internal class TLSTransmitterTest {
         val signatureWrong = mockByteArray(23)
         check(!signature.contentEquals(signatureWrong))
         val env = MockTLSEnvironment(
-            timeProvider = { timeNow },
             timeMax = timeMax,
+            keyPair = keyPair,
+            timeProvider = { timeNow },
             items = listOf(
                 Triple(secretKey.encoded, payload, encrypted),
             ),
@@ -283,7 +250,6 @@ internal class TLSTransmitterTest {
         val throwable: IllegalStateException = assertThrows(IllegalStateException::class.java) {
             TLSTransmitter.fromResponse(
                 env = env,
-                keyPair = keyPair,
                 methodCode = methodCode,
                 encodedQuery = encodedQuery,
                 secretKey = secretKey,
@@ -317,6 +283,7 @@ internal class TLSTransmitterTest {
         val responseSignatureData = responsePayload + toByteArray(id) + methodCode + encodedQuery + toByteArray(responseCode) + message.toByteArray()
         val responseSignature = mockByteArray(18)
         val env = MockTLSEnvironment(
+            keyPair = keyPair,
             timeProvider = { time },
             newSecretKeyProvider = { secretKey },
             items = listOf(
@@ -337,7 +304,6 @@ internal class TLSTransmitterTest {
         )
         val httpResponse = TLSReceiver.toHttpResponse(
             env = env,
-            privateKey = keyPair.private,
             secretKey = secretKey,
             methodCode = methodCode,
             encodedQuery = encodedQuery,
@@ -346,7 +312,6 @@ internal class TLSTransmitterTest {
         )
         val actual = TLSTransmitter.fromResponse(
             env = env,
-            keyPair = keyPair,
             methodCode = methodCode,
             encodedQuery = encodedQuery,
             secretKey = secretKey,

@@ -214,10 +214,7 @@ internal class TLSRoutingTest {
         val requestBody = toByteArray(encryptedSK.size) + encryptedSK +
             toByteArray(requestEncrypted.size) + requestEncrypted +
             toByteArray(requestSignature.size) + requestSignature
-        val routing = MockTLSRouting(
-            keyPair = keyPair,
-            env = env,
-        )
+        val routing = MockTLSRouting(env = env)
         val responseBody = toByteArray(responseEncrypted.size) + responseEncrypted + toByteArray(responseSignature.size) + responseSignature
         val expected = mockHttpResponse(
             version = "1.1",

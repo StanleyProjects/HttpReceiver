@@ -10,6 +10,7 @@ import kotlin.time.Duration
 
 internal class MockTLSEnvironment(
     override val timeMax: Duration = Duration.ZERO,
+    override val keyPair: KeyPair = KeyPair(MockPublicKey(mockByteArray(2)), MockPrivateKey(mockByteArray(4))),
     private val timeProvider: MockProvider<Duration> = MockProvider { Duration.ZERO },
     private val newUUIDProvider: MockProvider<UUID> = MockProvider { mockUUID() },
     private val newSecretKeyProvider: MockProvider<SecretKey> = MockProvider { MockSecretKey() },
