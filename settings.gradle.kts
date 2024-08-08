@@ -1,3 +1,3 @@
 rootProject.name = "HttpReceiver"
 
-include("lib", "sample")
+include("lib", "sample", "transmitter")
