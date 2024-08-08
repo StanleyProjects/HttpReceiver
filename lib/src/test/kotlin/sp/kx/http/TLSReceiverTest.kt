@@ -198,7 +198,7 @@ internal class TLSReceiverTest {
     }
 
     @Test
-    fun toResponseBodyTest() {
+    fun toHttpResponseTest() {
         val time = 11.milliseconds
         val encoded = mockByteArray(12)
         val payload = toByteArray(encoded.size) + encoded + toByteArray(time.inWholeMilliseconds)
@@ -221,16 +221,17 @@ internal class TLSReceiverTest {
                 keyPair to (signatureData to signature),
             ),
         )
-        val expected = toByteArray(encrypted.size) + encrypted + toByteArray(signature.size) + signature
-        val actual = TLSReceiver.toResponseBody(
+        val tlsResponse = mockTLSResponse()
+        val expected = mockHttpResponse()
+        val actual = TLSReceiver.toHttpResponse(
             env = env,
             privateKey = keyPair.private,
             secretKey = secretKey,
             methodCode = methodCode,
             encodedQuery = encodedQuery,
             requestID = requestID,
-            encoded = encoded,
+            tlsResponse = tlsResponse,
         )
-        assertTrue(expected.contentEquals(actual), "expected: ${expected.toHEX()}, actual: ${actual.toHEX()}")
+        assertEquals(expected, actual)
     }
 }

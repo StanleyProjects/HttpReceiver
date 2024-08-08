@@ -20,17 +20,13 @@ internal class MockTLSRouting(
         return requested
     }
 
-    fun <REQ : Any, RES : Any> test(
+    fun test(
         request: HttpRequest = mockHttpRequest(),
-        decode: (ByteArray) -> REQ = {TODO("MockTLSRouting:test:decode")},
-        transform: (REQ) -> RES = {TODO("MockTLSRouting:test:transform")},
-        encode: (RES) -> ByteArray = {TODO("MockTLSRouting:test:encode")},
+        transform: (ByteArray) -> TLSResponse = {TODO("MockTLSRouting:test:transform")},
     ): HttpResponse {
         return map(
             request = request,
-            decode = decode,
             transform = transform,
-            encode = encode,
         )
     }
 }

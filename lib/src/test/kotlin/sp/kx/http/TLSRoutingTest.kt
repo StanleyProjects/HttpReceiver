@@ -230,17 +230,11 @@ internal class TLSRoutingTest {
                 query = query,
                 body = requestBody,
             ),
-            decode = { bytes ->
+            transform = { bytes ->
                 check(bytes.contentEquals(requestEncoded))
-                requestDecoded
-            },
-            transform = { decoded ->
-                check(requestDecoded == decoded)
-                responseDecoded
-            },
-            encode = { decoded ->
-                check(responseDecoded == decoded)
-                responseEncoded
+                mockTLSResponse(
+                    encoded = responseEncoded,
+                )
             },
         )
         assertEquals(expected, actual)

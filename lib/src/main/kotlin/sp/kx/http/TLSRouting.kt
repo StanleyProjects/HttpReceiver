@@ -23,7 +23,7 @@ abstract class TLSRouting(
         this.requested += receiver.id to receiver.time
     }
 
-    protected fun <REQ : Any, RES : Any> map(
+    protected fun map(
         request: HttpRequest,
         transform: (ByteArray) -> TLSResponse,
     ): HttpResponse {
