@@ -3,7 +3,7 @@ package sp.kx.http
 import sp.kx.bytes.readInt
 import sp.kx.bytes.readLong
 import sp.kx.bytes.readUUID
-import sp.kx.bytes.toHEX
+import sp.kx.bytes.hex
 import sp.kx.bytes.write
 import java.util.Date
 import java.util.Objects
@@ -20,10 +20,10 @@ internal class TLSReceiver(
 ) {
     override fun toString(): String {
         return "{" +
-            "secretKey: \"${secretKey.encoded.toHEX()}\", " +
+            "secretKey: \"${secretKey.encoded.hex()}\", " +
             "id: $id, " +
             "time: ${Date(time.inWholeMilliseconds)}, " +
-            "encoded: \"${encoded.toHEX()}\"" +
+            "encoded: \"${encoded.hex()}\"" +
             "}"
     }
 

@@ -1,6 +1,6 @@
 package sp.kx.http
 
-import sp.kx.bytes.toHEX
+import sp.kx.bytes.hex
 import java.util.Objects
 
 class TLSResponse(
@@ -15,7 +15,7 @@ class TLSResponse(
             builder.append(", message: \"$message\"")
         }
         if (encoded != null && encoded.isNotEmpty()) {
-            builder.append(", encoded: \"${encoded.toHEX()}\"")
+            builder.append(", encoded: \"${encoded.hex()}\"")
         }
         return builder.append("}").toString()
     }

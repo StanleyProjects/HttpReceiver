@@ -2,7 +2,7 @@ package sp.kx.http
 
 import sp.kx.bytes.readInt
 import sp.kx.bytes.readLong
-import sp.kx.bytes.toHEX
+import sp.kx.bytes.hex
 import sp.kx.bytes.write
 import java.util.Objects
 import java.util.UUID
@@ -16,9 +16,9 @@ class TLSTransmitter internal constructor(
 ) {
     override fun toString(): String {
         return "{" +
-            "secretKey: \"${secretKey.encoded.toHEX()}\", " +
+            "secretKey: \"${secretKey.encoded.hex()}\", " +
             "id: $id, " +
-            "body: \"${body.toHEX()}\"" +
+            "body: \"${body.hex()}\"" +
             "}"
     }
 
