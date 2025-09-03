@@ -39,7 +39,7 @@ fun main() {
             timeMax = 1.minutes,
             keyPair = keyPair,
         ),
-        address = URL("http://192.168.88.222:40631"),
+        address = URL("http://192.168.88.228:40631"),
     )
     val number = 42
     val expected = number * 2
