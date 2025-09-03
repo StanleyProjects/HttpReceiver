@@ -1,6 +1,6 @@
 package sp.service.transmitter
 
-import sp.kx.bytes.toHEX
+import sp.kx.bytes.hex
 import sp.service.transmitter.provider.FinalLoggers
 import sp.service.transmitter.provider.FinalRemotes
 import sp.service.transmitter.provider.FinalSecrets
@@ -28,9 +28,9 @@ fun main() {
     }
     val key = keyStore.getKey(alias, password.toCharArray()) ?: error("No \"$alias\"!")
     check(key is PrivateKey)
-    logger.debug("private:key:hash: ${secrets.hash(key.encoded).toHEX()}")
+    logger.debug("private:key:hash: ${secrets.hash(key.encoded).hex()}")
     val certificate = keyStore.getCertificate(alias)
-    logger.debug("public:key:hash: ${secrets.hash(certificate.publicKey.encoded).toHEX()}")
+    logger.debug("public:key:hash: ${secrets.hash(certificate.publicKey.encoded).hex()}")
     val keyPair = KeyPair(certificate.publicKey, key)
     val remotes: Remotes = FinalRemotes(
         loggers = loggers,

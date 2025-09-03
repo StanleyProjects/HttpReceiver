@@ -5,7 +5,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import sp.kx.bytes.toHEX
+import sp.kx.bytes.hex
 import sp.kx.http.HttpReceiver
 import sp.service.sample.provider.FinalLoggers
 import sp.service.sample.provider.FinalSecrets
@@ -31,9 +31,9 @@ fun main() {
     }
     val key = keyStore.getKey(alias, password.toCharArray()) ?: error("No \"$alias\"!")
     check(key is PrivateKey)
-    logger.debug("private:key:hash: ${secrets.hash(key.encoded).toHEX()}")
+    logger.debug("private:key:hash: ${secrets.hash(key.encoded).hex()}")
     val certificate = keyStore.getCertificate(alias)
-    logger.debug("public:key:hash: ${secrets.hash(certificate.publicKey.encoded).toHEX()}")
+    logger.debug("public:key:hash: ${secrets.hash(certificate.publicKey.encoded).hex()}")
     val keyPair = KeyPair(certificate.publicKey, key)
     runBlocking {
         val job = Job()

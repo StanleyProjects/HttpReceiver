@@ -1,9 +1,6 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
-repositories {
-    mavenCentral()
-    maven("https://s01.oss.sonatype.org/content/repositories/snapshots")
-}
+repositories.mavenCentral()
 
 plugins {
     id("application")
@@ -24,7 +21,7 @@ tasks.getByName<KotlinCompile>("compileKotlin") {
 
 dependencies {
     implementation(project(":lib"))
-    implementation("com.github.kepocnhh:Bytes:0.1.0-SNAPSHOT")
+    implementation("com.github.kepocnhh:Bytes:0.4.0")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
 }
