@@ -6,6 +6,7 @@ import java.util.Objects
 class TLSResponse(
     val code: Int,
     val message: String,
+    @Deprecated("body")
     val encoded: ByteArray?,
 ) {
     override fun toString(): String {
