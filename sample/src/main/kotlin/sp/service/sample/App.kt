@@ -5,22 +5,21 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import sp.kx.bytes.hex
 import sp.kx.http.HttpReceiver
+import sp.kx.secrets.Asymmetric
+import sp.kx.secrets.Symmetric
+import sp.kx.tlsmessages.RealTLSReceiver
 import sp.service.sample.provider.FinalLoggers
-import sp.service.sample.provider.FinalSecrets
-import sp.service.sample.provider.FinalTLSEnvironment
 import sp.service.sample.provider.Loggers
-import sp.service.sample.provider.Secrets
 import java.security.KeyPair
 import java.security.KeyStore
 import java.security.PrivateKey
-import kotlin.time.Duration.Companion.minutes
+import java.util.UUID
+import kotlin.time.Duration
 
 fun main() {
     val loggers: Loggers = FinalLoggers()
     val logger = loggers.create("[App]")
-    val secrets: Secrets = FinalSecrets()
     val keyStore = KeyStore.getInstance("PKCS12")
     val alias = "a202"
     val password = "qwe202"
@@ -31,21 +30,21 @@ fun main() {
     }
     val key = keyStore.getKey(alias, password.toCharArray()) ?: error("No \"$alias\"!")
     check(key is PrivateKey)
-    logger.debug("private:key:hash: ${secrets.hash(key.encoded).hex()}")
     val certificate = keyStore.getCertificate(alias)
-    logger.debug("public:key:hash: ${secrets.hash(certificate.publicKey.encoded).hex()}")
     val keyPair = KeyPair(certificate.publicKey, key)
+    val requested = mutableMapOf<UUID, Duration>()
     runBlocking {
         val job = Job()
         val coroutineScope = CoroutineScope(Dispatchers.Default + job)
         coroutineScope.launch {
             val routing = AppRouting(
                 loggers = loggers,
-                tlsEnv = FinalTLSEnvironment(
-                    timeMax = 1.minutes,
+                receiver = RealTLSReceiver(
+                    requested = requested,
+                    symmetric = Symmetric.AES,
+                    asymmetric = Asymmetric.RSA,
                     keyPair = keyPair,
                 ),
-                requested = mutableMapOf(),
                 coroutineScope = coroutineScope,
             )
             val receiver = HttpReceiver(routing)

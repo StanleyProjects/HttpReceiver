@@ -10,19 +10,15 @@ import sp.kx.bytes.readInt
 import sp.kx.bytes.write
 import sp.kx.http.HttpRequest
 import sp.kx.http.HttpResponse
-import sp.kx.http.TLSEnvironment
-import sp.kx.http.TLSResponse
 import sp.kx.http.TLSRouting
+import sp.kx.tlsmessages.TLSReceiver
 import sp.service.sample.provider.Loggers
-import java.util.UUID
-import kotlin.time.Duration
 
 internal class AppRouting(
     loggers: Loggers,
-    tlsEnv: TLSEnvironment,
-    override var requested: Map<UUID, Duration>,
+    receiver: TLSReceiver,
     private val coroutineScope: CoroutineScope,
-) : TLSRouting(tlsEnv) {
+) : TLSRouting(receiver) {
     sealed interface Event {
         data object Quit : Event
     }
@@ -55,9 +51,9 @@ internal class AppRouting(
             transform = { encoded ->
                 val number = encoded.readInt()
                 check(number in 1..1024) { "Number \"$number\" error!" }
-                val bytes = ByteArray(4)
-                bytes.write(value = number * 2)
-                TLSResponse.OK(encoded = bytes)
+                val body = ByteArray(4)
+                body.write(value = number * 2)
+                HttpResponse.OK(body = body)
             },
         )
     }
