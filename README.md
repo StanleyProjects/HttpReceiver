@@ -30,7 +30,7 @@ dependencies {
 
 ## Unstable
 
-> GitHub [0.2.1u-SNAPSHOT](https://github.com/StanleyProjects/HttpReceiver/releases/tag/0.2.1u-SNAPSHOT) release
+> GitHub [0.2.2u-SNAPSHOT](https://github.com/StanleyProjects/HttpReceiver/releases/tag/0.2.2u-SNAPSHOT) release
 >
 > Maven [metadata](https://central.sonatype.com/repository/maven-snapshots/com/github/kepocnhh/HttpReceiver/maven-metadata.xml)
 
@@ -46,7 +46,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.github.kepocnhh:HttpReceiver:0.2.1u-SNAPSHOT")
+    implementation("com.github.kepocnhh:HttpReceiver:0.2.2u-SNAPSHOT")
 }
 ```
 
