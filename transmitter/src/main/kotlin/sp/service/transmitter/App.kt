@@ -1,13 +1,13 @@
 package sp.service.transmitter
 
 import sp.kx.bytes.hex
+import sp.kx.secrets.Asymmetric
+import sp.kx.secrets.Symmetric
+import sp.kx.tlsmessages.RealTLSTransmitter
 import sp.service.transmitter.provider.FinalLoggers
 import sp.service.transmitter.provider.FinalRemotes
-import sp.service.transmitter.provider.FinalSecrets
-import sp.service.transmitter.provider.FinalTLSEnvironment
 import sp.service.transmitter.provider.Loggers
 import sp.service.transmitter.provider.Remotes
-import sp.service.transmitter.provider.Secrets
 import java.net.URL
 import java.security.KeyPair
 import java.security.KeyStore
@@ -17,7 +17,6 @@ import kotlin.time.Duration.Companion.minutes
 fun main() {
     val loggers: Loggers = FinalLoggers()
     val logger = loggers.create("[App]")
-    val secrets: Secrets = FinalSecrets()
     val keyStore = KeyStore.getInstance("PKCS12")
     val alias = "a202"
     val password = "qwe202"
@@ -28,16 +27,14 @@ fun main() {
     }
     val key = keyStore.getKey(alias, password.toCharArray()) ?: error("No \"$alias\"!")
     check(key is PrivateKey)
-    logger.debug("private:key:hash: ${secrets.hash(key.encoded).hex()}")
     val certificate = keyStore.getCertificate(alias)
-    logger.debug("public:key:hash: ${secrets.hash(certificate.publicKey.encoded).hex()}")
     val keyPair = KeyPair(certificate.publicKey, key)
     val remotes: Remotes = FinalRemotes(
         loggers = loggers,
-        tlsEnv = FinalTLSEnvironment(
-            secrets = secrets,
-            timeMax = 1.minutes,
+        transmitter = RealTLSTransmitter(
             keyPair = keyPair,
+            symmetric = Symmetric.AES,
+            asymmetric = Asymmetric.RSA,
         ),
         address = URL("http://192.168.88.228:40631"),
     )
