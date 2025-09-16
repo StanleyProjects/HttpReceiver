@@ -15,7 +15,7 @@ import sp.kx.gradlex.dir
 import sp.kx.gradlex.eff
 import sp.kx.gradlex.get
 
-version = "0.2.1"
+version = "0.2.2"
 
 val maven = Maven.Artifact(
     group = "com.github.kepocnhh",
@@ -57,8 +57,8 @@ tasks.getByName<KotlinCompile>("compileTestKotlin") {
 dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
     implementation("com.github.kepocnhh:Bytes:0.4.0")
-    implementation("com.github.kepocnhh:Secrets:0.1.0")
-    implementation("com.github.kepocnhh:TLSMessages:0.0.2-SNAPSHOT")
+    implementation("com.github.kepocnhh:Secrets:0.2.0u-SNAPSHOT")
+    implementation("com.github.kepocnhh:TLSMessages:0.1.0u-SNAPSHOT")
     testImplementation("org.junit.jupiter:junit-jupiter-api:${Version.jupiter}")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${Version.jupiter}")
 }
