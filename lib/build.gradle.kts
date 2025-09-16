@@ -58,7 +58,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
     implementation("com.github.kepocnhh:Bytes:0.4.0")
     implementation("com.github.kepocnhh:Secrets:0.1.0")
-    implementation("com.github.kepocnhh:TLSMessages:0.0.1u-SNAPSHOT")
+    implementation("com.github.kepocnhh:TLSMessages:0.0.2-SNAPSHOT")
     testImplementation("org.junit.jupiter:junit-jupiter-api:${Version.jupiter}")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${Version.jupiter}")
 }
