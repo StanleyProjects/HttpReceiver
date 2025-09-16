@@ -2,7 +2,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 repositories {
     mavenCentral()
-    maven("https://s01.oss.sonatype.org/content/repositories/snapshots")
+    maven("https://central.sonatype.com/repository/maven-snapshots") // todo
 }
 
 plugins {
@@ -24,6 +24,8 @@ tasks.getByName<KotlinCompile>("compileKotlin") {
 
 dependencies {
     implementation(project(":lib"))
-    implementation("com.github.kepocnhh:Bytes:0.1.0-SNAPSHOT")
+    implementation("com.github.kepocnhh:Bytes:0.4.0")
+    implementation("com.github.kepocnhh:Secrets:0.1.0")
+    implementation("com.github.kepocnhh:TLSMessages:0.0.2-SNAPSHOT")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
 }

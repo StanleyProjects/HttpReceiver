@@ -1,6 +1,6 @@
 package sp.kx.http
 
-import sp.kx.bytes.toHEX
+import sp.kx.bytes.hex
 import java.io.OutputStream
 import java.util.Objects
 
@@ -63,7 +63,7 @@ class HttpResponse(
         if (body != null && body.isNotEmpty()) {
             builder
                 .append(", ")
-                .append("body: \"${body.toHEX()}\"")
+                .append("body: \"${body.hex()}\"")
         }
         return builder.append("}").toString()
     }

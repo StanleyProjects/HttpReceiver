@@ -5,15 +5,13 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import sp.kx.bytes.readInt
 import sp.kx.bytes.write
-import sp.kx.http.TLSEnvironment
-import sp.kx.http.TLSTransmitter
+import sp.kx.tlsmessages.TLSTransmitter
 import java.net.URL
-import java.security.KeyPair
 import java.util.concurrent.TimeUnit
 
 internal class FinalRemotes(
     loggers: Loggers,
-    private val tlsEnv: TLSEnvironment,
+    private val transmitter: TLSTransmitter,
     private val address: URL,
 ) : Remotes {
     private val logger = loggers.create("[Remotes]")
@@ -24,36 +22,29 @@ internal class FinalRemotes(
     private fun <T : Any> map(
         method: String,
         query: String,
-        encoded: ByteArray,
+        body: ByteArray,
         decode: (ByteArray) -> T,
     ): T {
         logger.debug("method: \"$method\"") // todo
-        val methodCode: Byte = TLSEnvironment.getMethodCode(method = method)
         logger.debug("query: \"$query\"") // todo
-        val encodedQuery = query.toByteArray()
-        val tlsTransmitter = TLSTransmitter.build(
-            env = tlsEnv,
-            methodCode = methodCode,
-            encodedQuery = encodedQuery,
-            encoded = encoded,
+        val request = transmitter.toRequest(
+            method = method,
+            query = query,
+            body = body,
         )
         return client.newCall(
             request = Request.Builder()
                 .url(URL(address, query))
-                .method(method, tlsTransmitter.body.toRequestBody())
+                .method(method, request.bytes.toRequestBody())
                 .build(),
         ).execute().use { response ->
             when (response.code) {
                 200 -> {
-                    val responseEncoded = TLSTransmitter.fromResponse(
-                        env = tlsEnv,
-                        methodCode = methodCode,
-                        encodedQuery = encodedQuery,
-                        secretKey = tlsTransmitter.secretKey,
-                        requestID = tlsTransmitter.id,
-                        responseCode = response.code,
+                    val responseEncoded = transmitter.fromResponseBody(
+                        code = response.code,
                         message = response.message,
-                        body = response.body?.bytes() ?: error("No body!"),
+                        issuer = request.issuer,
+                        bytes = response.body?.bytes() ?: error("No body!"),
                     )
                     decode(responseEncoded)
                 }
@@ -63,12 +54,12 @@ internal class FinalRemotes(
     }
 
     override fun double(number: Int): Int {
-        val bytes = ByteArray(4)
-        bytes.write(value = number)
+        val body = ByteArray(4)
+        body.write(value = number)
         return map(
             method = "POST",
             query = "/double",
-            encoded = bytes,
+            body = body,
             decode = { it.readInt() },
         )
     }
